@@ -6,56 +6,29 @@
 //
 
 import SwiftUI
-import SwiftData
 
 struct ContentView: View {
-    @Environment(\.modelContext) private var modelContext
-    @Query private var items: [Item]
+    @Environment(LanguageManager.self) private var lang
+    @State private var selectedTab = 0
 
     var body: some View {
-        NavigationSplitView {
-            List {
-                ForEach(items) { item in
-                    NavigationLink {
-                        Text("Item at \(item.timestamp, format: Date.FormatStyle(date: .numeric, time: .standard))")
-                    } label: {
-                        Text(item.timestamp, format: Date.FormatStyle(date: .numeric, time: .standard))
-                    }
-                }
-                .onDelete(perform: deleteItems)
-            }
-            .toolbar {
-                ToolbarItem(placement: .navigationBarTrailing) {
-                    EditButton()
-                }
-                ToolbarItem {
-                    Button(action: addItem) {
-                        Label("Add Item", systemImage: "plus")
-                    }
-                }
-            }
-        } detail: {
-            Text("Select an item")
+        TabView(selection: $selectedTab) {
+            HomeView(selectedTab: $selectedTab)
+                .tabItem { Label(lang.t("Αρχική", "Home"), systemImage: "house.fill") }
+                .tag(0)
+            StudyView()
+                .tabItem { Label(lang.t("Μελέτη", "Study"), systemImage: "book.fill") }
+                .tag(1)
+            TestView(selectedTab: $selectedTab)
+                .tabItem { Label(lang.t("Εξέταση", "Exam"), systemImage: "checkmark.circle.fill") }
+                .tag(2)
+            StatsView()
+                .tabItem { Label(lang.t("Στατιστικά", "Stats"), systemImage: "chart.bar.fill") }
+                .tag(3)
+            SettingsView()
+                .tabItem { Label(lang.t("Ρυθμίσεις", "Settings"), systemImage: "gearshape.fill") }
+                .tag(4)
         }
+        .tint(.greekBlue)
     }
-
-    private func addItem() {
-        withAnimation {
-            let newItem = Item(timestamp: Date())
-            modelContext.insert(newItem)
-        }
-    }
-
-    private func deleteItems(offsets: IndexSet) {
-        withAnimation {
-            for index in offsets {
-                modelContext.delete(items[index])
-            }
-        }
-    }
-}
-
-#Preview {
-    ContentView()
-        .modelContainer(for: Item.self, inMemory: true)
 }

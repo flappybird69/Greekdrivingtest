@@ -10,23 +10,20 @@ import SwiftData
 
 @main
 struct GreekdrivingtestApp: App {
-    var sharedModelContainer: ModelContainer = {
-        let schema = Schema([
-            Item.self,
-        ])
-        let modelConfiguration = ModelConfiguration(schema: schema, isStoredInMemoryOnly: false)
+    @State private var langManager = LanguageManager()
 
-        do {
-            return try ModelContainer(for: schema, configurations: [modelConfiguration])
-        } catch {
-            fatalError("Could not create ModelContainer: \(error)")
-        }
+    let container: ModelContainer = {
+        let schema = Schema([TestResult.self, BookmarkedQuestion.self])
+        let config = ModelConfiguration(schema: schema, isStoredInMemoryOnly: false)
+        do { return try ModelContainer(for: schema, configurations: [config]) }
+        catch { fatalError("SwiftData error: \(error)") }
     }()
 
     var body: some Scene {
         WindowGroup {
             ContentView()
+                .environment(langManager)
         }
-        .modelContainer(sharedModelContainer)
+        .modelContainer(container)
     }
 }
