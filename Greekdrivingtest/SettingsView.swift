@@ -6,12 +6,43 @@ struct SettingsView: View {
     @Environment(\.modelContext) private var modelContext
     @Query private var results: [TestResult]
     @State private var showingClearConfirm = false
+    @AppStorage("userName") private var userName = ""
+    @State private var nameInput = ""
 
     var body: some View {
         NavigationStack {
             ZStack {
                 AppBackground()
                 List {
+                    // Profile
+                    Section {
+                        HStack(spacing: 12) {
+                            ZStack {
+                                Circle()
+                                    .fill(Color.greekBlue.opacity(0.12))
+                                    .frame(width: 36, height: 36)
+                                Image(systemName: "person.fill")
+                                    .font(.system(size: 15, weight: .semibold))
+                                    .foregroundColor(.greekBlue)
+                            }
+                            TextField(lang.t("Το όνομά σου...", "Your name..."), text: $nameInput)
+                                .submitLabel(.done)
+                                .onChange(of: nameInput) { _, newValue in
+                                    userName = newValue.trimmingCharacters(in: .whitespaces)
+                                }
+                            if !nameInput.isEmpty {
+                                Button { nameInput = "" } label: {
+                                    Image(systemName: "xmark.circle.fill")
+                                        .foregroundColor(Color(.systemGray3))
+                                }
+                            }
+                        }
+                    } header: {
+                        Text(lang.t("Προφίλ", "Profile"))
+                    } footer: {
+                        Text(lang.t("Εμφανίζεται στην αρχική σελίδα", "Shown on the home screen"))
+                    }
+
                     // Language
                     Section {
                         ForEach(AppLanguage.allCases, id: \.self) { language in
@@ -112,6 +143,7 @@ struct SettingsView: View {
                     }
                 }
                 .scrollContentBackground(.hidden)
+                .onAppear { nameInput = userName }
             }
             .navigationTitle(lang.t("Ρυθμίσεις", "Settings"))
             .confirmationDialog(

@@ -554,7 +554,7 @@ enum QuestionBank {
             correctIndex: 0,
             explanationGR: "",
             explanationEN: "",
-            visual: .image(named: "b-05")
+            visual: .image(named: "bx05")
         ),
         Question(
             id: 47,
@@ -1718,7 +1718,7 @@ enum QuestionBank {
             correctIndex: 1,
             explanationGR: "",
             explanationEN: "",
-            visual: .image(named: "b-03")
+            visual: .image(named: "bx03")
         ),
         Question(
             id: 144,

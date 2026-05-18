@@ -1,5 +1,6 @@
 import SwiftUI
 import SwiftData
+import Combine
 
 // MARK: - Filter Pill
 struct FilterPill: View {
@@ -559,6 +560,7 @@ struct IntensivePracticeView: View {
     @State private var sourceMode: SourceMode = .all
     @State private var activeSession: FlashcardSession? = nil
     @State private var showReset = false
+    @State private var showSpeedRound = false
 
     enum CountOption: Int, CaseIterable {
         case ten = 10, twenty = 20, thirty = 30, all = 0
@@ -597,7 +599,12 @@ struct IntensivePracticeView: View {
     }
 
     var body: some View {
-        if let session = activeSession {
+        if showSpeedRound {
+            SpeedRoundView(
+                questions: pool.isEmpty ? Array(QuestionBank.all.shuffled().prefix(30)) : pool,
+                onReturn: { showSpeedRound = false }
+            )
+        } else if let session = activeSession {
             FlashcardSessionView(
                 session: session,
                 onReturn: { activeSession = nil },
@@ -616,6 +623,7 @@ struct IntensivePracticeView: View {
                     categorySection
                     countSection
                     startButton
+                    speedChallengeCard
                 }
                 .padding(16)
             }
@@ -878,6 +886,335 @@ struct IntensivePracticeView: View {
                     .foregroundColor(.secondary)
             }
         }
+    }
+
+    // MARK: Speed Challenge Card
+    private var speedChallengeCard: some View {
+        Button { showSpeedRound = true } label: {
+            HStack(spacing: 14) {
+                ZStack {
+                    RoundedRectangle(cornerRadius: 12)
+                        .fill(Color.catOrange.opacity(0.15))
+                        .frame(width: 48, height: 48)
+                    Image(systemName: "bolt.fill")
+                        .font(.title3)
+                        .foregroundColor(.catOrange)
+                }
+                VStack(alignment: .leading, spacing: 3) {
+                    Text(lang.t("Αγώνας Ταχύτητας", "Speed Challenge"))
+                        .font(.headline.bold())
+                        .foregroundColor(.primary)
+                    Text(lang.t("60 δευτερόλεπτα · Απάντα γρήγορα!", "60 seconds · Answer fast!"))
+                        .font(.caption)
+                        .foregroundColor(.secondary)
+                }
+                Spacer()
+                Image(systemName: "chevron.right")
+                    .font(.caption.bold())
+                    .foregroundColor(.secondary)
+            }
+            .padding(16)
+            .background(Color(.systemBackground))
+            .clipShape(RoundedRectangle(cornerRadius: 16))
+            .overlay(RoundedRectangle(cornerRadius: 16).stroke(Color.catOrange.opacity(0.3), lineWidth: 1))
+            .shadow(color: Color.catOrange.opacity(0.12), radius: 8, x: 0, y: 3)
+        }
+        .buttonStyle(.plain)
+    }
+}
+
+// MARK: - Speed Round View
+
+struct SpeedRoundView: View {
+    @Environment(LanguageManager.self) private var lang
+    @AppStorage("speedRoundBest") private var personalBest: Int = 0
+
+    let questions: [Question]
+    let onReturn: () -> Void
+
+    @State private var currentIndex = 0
+    @State private var score = 0
+    @State private var answered = 0
+    @State private var timeLeft = 60
+    @State private var isFinished = false
+    @State private var flashGreen = false
+    @State private var flashRed = false
+    @State private var isNewBest = false
+
+    private let ticker = Timer.publish(every: 1, on: .main, in: .common).autoconnect()
+
+    private var currentQuestion: Question? {
+        guard currentIndex < questions.count else { return nil }
+        return questions[currentIndex]
+    }
+
+    var body: some View {
+        ZStack {
+            AppBackground()
+
+            if isFinished {
+                finishedView
+            } else {
+                VStack(spacing: 0) {
+                    topBar
+                    if let q = currentQuestion {
+                        questionContent(q)
+                    } else {
+                        Spacer()
+                        Text(lang.t("Ολοκληρώθηκαν οι ερωτήσεις!", "All questions done!"))
+                            .font(.headline)
+                            .foregroundColor(.secondary)
+                        Spacer()
+                    }
+                }
+            }
+
+            if flashGreen {
+                Color.green.opacity(0.18)
+                    .ignoresSafeArea()
+                    .allowsHitTesting(false)
+                    .transition(.opacity)
+            }
+            if flashRed {
+                Color.red.opacity(0.18)
+                    .ignoresSafeArea()
+                    .allowsHitTesting(false)
+                    .transition(.opacity)
+            }
+        }
+        .onReceive(ticker) { _ in
+            guard !isFinished else { return }
+            if timeLeft > 0 {
+                timeLeft -= 1
+            } else {
+                finish()
+            }
+        }
+    }
+
+    private var topBar: some View {
+        HStack(spacing: 12) {
+            Button { finish() } label: {
+                Image(systemName: "xmark.circle.fill")
+                    .font(.title2)
+                    .foregroundColor(Color(.systemGray3))
+            }
+
+            Spacer()
+
+            ZStack {
+                Circle()
+                    .stroke(Color(.systemGray5), lineWidth: 4)
+                    .frame(width: 52, height: 52)
+                Circle()
+                    .trim(from: 0, to: CGFloat(timeLeft) / 60.0)
+                    .stroke(timerColor, style: StrokeStyle(lineWidth: 4, lineCap: .round))
+                    .frame(width: 52, height: 52)
+                    .rotationEffect(.degrees(-90))
+                    .animation(.linear(duration: 1), value: timeLeft)
+                Text("\(timeLeft)")
+                    .font(.system(size: 15, weight: .bold, design: .rounded))
+                    .foregroundColor(timerColor)
+            }
+
+            Spacer()
+
+            VStack(spacing: 2) {
+                Text("\(score)")
+                    .font(.system(size: 22, weight: .bold, design: .rounded))
+                    .foregroundColor(.passGreen)
+                Text(lang.t("σωστά", "correct"))
+                    .font(.caption2)
+                    .foregroundColor(.secondary)
+            }
+            .frame(width: 60)
+        }
+        .padding(.horizontal, 20)
+        .padding(.vertical, 14)
+    }
+
+    private var timerColor: Color {
+        if timeLeft > 20 { return .greekBlue }
+        if timeLeft > 10 { return .catOrange }
+        return .catRed
+    }
+
+    @ViewBuilder
+    private func questionContent(_ q: Question) -> some View {
+        ScrollView {
+            VStack(spacing: 20) {
+                Text("\(lang.t("Ερώτηση", "Question")) \(answered + 1)")
+                    .font(.caption.bold())
+                    .foregroundColor(.secondary)
+                    .padding(.horizontal, 12).padding(.vertical, 5)
+                    .background(Color(.systemGray6))
+                    .clipShape(Capsule())
+
+                switch q.visual {
+                case .none: EmptyView()
+                default:
+                    QuestionVisualView(visual: q.visual, size: 80)
+                }
+
+                Text(q.text(greek: lang.language.isGreek))
+                    .font(.title3.weight(.semibold))
+                    .multilineTextAlignment(.center)
+                    .padding(.horizontal, 20)
+
+                VStack(spacing: 10) {
+                    ForEach(q.options(greek: lang.language.isGreek).indices, id: \.self) { i in
+                        speedAnswerButton(q: q, index: i)
+                    }
+                }
+                .padding(.horizontal, 16)
+
+                Spacer(minLength: 20)
+            }
+            .padding(.vertical, 12)
+        }
+    }
+
+    private func speedAnswerButton(q: Question, index: Int) -> some View {
+        Button {
+            tapAnswer(q: q, index: index)
+        } label: {
+            HStack(spacing: 14) {
+                Text(["Α","Β","Γ","Δ"][index])
+                    .font(.subheadline.bold())
+                    .foregroundColor(.white)
+                    .frame(width: 32, height: 32)
+                    .background(Color.greekBlue)
+                    .clipShape(Circle())
+
+                Text(q.options(greek: lang.language.isGreek)[index])
+                    .font(.subheadline.weight(.medium))
+                    .foregroundColor(.primary)
+                    .multilineTextAlignment(.leading)
+                    .frame(maxWidth: .infinity, alignment: .leading)
+            }
+            .padding(.horizontal, 16)
+            .padding(.vertical, 14)
+            .background(Color(.systemBackground))
+            .clipShape(RoundedRectangle(cornerRadius: 14))
+            .shadow(color: .black.opacity(0.05), radius: 6, x: 0, y: 2)
+            .overlay(
+                RoundedRectangle(cornerRadius: 14)
+                    .stroke(Color(.systemGray5), lineWidth: 1)
+            )
+        }
+    }
+
+    private var finishedView: some View {
+        VStack(spacing: 24) {
+            Spacer()
+
+            ZStack {
+                Circle()
+                    .fill(score > answered / 2 ? Color.passGreen.opacity(0.12) : Color.catRed.opacity(0.12))
+                    .frame(width: 120, height: 120)
+                Text(score > answered / 2 ? "⚡" : "💪")
+                    .font(.system(size: 56))
+            }
+
+            VStack(spacing: 8) {
+                Text(lang.t("Χρόνος τελείωσε!", "Time's up!"))
+                    .font(.title2.bold())
+                HStack(spacing: 4) {
+                    Text("\(score)")
+                        .font(.system(size: 52, weight: .bold, design: .rounded))
+                        .foregroundColor(.greekBlue)
+                    Text("/ \(answered)")
+                        .font(.title.weight(.medium))
+                        .foregroundColor(.secondary)
+                        .padding(.top, 8)
+                }
+                Text(lang.t("σωστά σε \(answered) ερωτήσεις", "correct out of \(answered) questions"))
+                    .font(.subheadline)
+                    .foregroundColor(.secondary)
+            }
+
+            if isNewBest && personalBest > 0 {
+                HStack(spacing: 6) {
+                    Image(systemName: "trophy.fill")
+                        .foregroundColor(.greekGold)
+                    Text(lang.t("Νέο Ρεκόρ! 🎉", "New Personal Best! 🎉"))
+                        .font(.headline.bold())
+                        .foregroundColor(.greekGold)
+                }
+                .padding(.horizontal, 20).padding(.vertical, 12)
+                .background(Color.greekGold.opacity(0.12))
+                .clipShape(Capsule())
+            } else if personalBest > 0 {
+                Text(lang.t("Καλύτερο: \(personalBest)", "Best: \(personalBest)"))
+                    .font(.subheadline)
+                    .foregroundColor(.secondary)
+            }
+
+            HStack(spacing: 16) {
+                Button { onReturn() } label: {
+                    Text(lang.t("Τέλος", "Exit"))
+                        .font(.headline)
+                        .foregroundColor(.greekBlue)
+                        .padding(.horizontal, 28).padding(.vertical, 14)
+                        .overlay(Capsule().stroke(Color.greekBlue, lineWidth: 1.5))
+                }
+
+                Button { restart() } label: {
+                    Text(lang.t("Ξανά!", "Again!"))
+                        .font(.headline.bold())
+                        .foregroundColor(.white)
+                        .padding(.horizontal, 28).padding(.vertical, 14)
+                        .background(
+                            Capsule().fill(LinearGradient(
+                                colors: [.greekBlue, .greekDark],
+                                startPoint: .leading, endPoint: .trailing
+                            ))
+                        )
+                }
+            }
+
+            Spacer()
+        }
+        .padding()
+    }
+
+    private func tapAnswer(q: Question, index: Int) {
+        guard !isFinished else { return }
+        let correct = index == q.correctIndex
+        if correct {
+            score += 1
+            withAnimation(.easeOut(duration: 0.1)) { flashGreen = true }
+            DispatchQueue.main.asyncAfter(deadline: .now() + 0.3) {
+                withAnimation { flashGreen = false }
+            }
+        } else {
+            withAnimation(.easeOut(duration: 0.1)) { flashRed = true }
+            DispatchQueue.main.asyncAfter(deadline: .now() + 0.3) {
+                withAnimation { flashRed = false }
+            }
+        }
+        answered += 1
+        currentIndex += 1
+        UIImpactFeedbackGenerator(style: correct ? .medium : .heavy).impactOccurred()
+        if currentIndex >= questions.count { finish() }
+    }
+
+    private func finish() {
+        guard !isFinished else { return }
+        if score > personalBest {
+            personalBest = score
+            isNewBest = true
+        }
+        isFinished = true
+    }
+
+    private func restart() {
+        currentIndex = 0
+        score = 0
+        answered = 0
+        timeLeft = 60
+        isFinished = false
+        isNewBest = false
     }
 }
 

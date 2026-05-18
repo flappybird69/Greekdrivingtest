@@ -5,6 +5,7 @@ import Charts
 struct StatsView: View {
     @Environment(LanguageManager.self) private var lang
     @Query(sort: \TestResult.date, order: .reverse) private var results: [TestResult]
+    @AppStorage("streakCount") private var streakCount = 0
 
     var body: some View {
         NavigationStack {
@@ -16,6 +17,7 @@ struct StatsView: View {
                     ScrollView {
                         VStack(spacing: 20) {
                             overallCards
+                            achievementsSection
                             scoreChart
                             historyList
                         }
@@ -160,6 +162,105 @@ struct StatsView: View {
                 HistoryRow(result: result)
             }
         }
+    }
+
+    // MARK: - Achievements
+
+    private struct Achievement {
+        let icon: String
+        let title: String
+        let color: Color
+        let unlocked: Bool
+    }
+
+    private var hasHatTrick: Bool {
+        var consecutive = 0
+        for r in results.reversed() {
+            if r.passed { consecutive += 1; if consecutive >= 3 { return true } }
+            else { consecutive = 0 }
+        }
+        return false
+    }
+
+    private var achievements: [Achievement] {
+        [
+            Achievement(icon: "doc.badge.plus",
+                        title: lang.t("Πρώτη Εξέταση", "First Exam"),
+                        color: .catBlue, unlocked: !results.isEmpty),
+            Achievement(icon: "checkmark.seal.fill",
+                        title: lang.t("Πρώτη Επιτυχία", "First Pass"),
+                        color: .passGreen, unlocked: results.contains(where: \.passed)),
+            Achievement(icon: "star.fill",
+                        title: lang.t("Τέλεια Βαθμολογία", "Perfect Score"),
+                        color: .greekGold, unlocked: results.contains { $0.score == 30 }),
+            Achievement(icon: "circle.slash",
+                        title: lang.t("Αλάνθαστος", "No Errors"),
+                        color: .catBlue, unlocked: results.contains { $0.errors == 0 }),
+            Achievement(icon: "3.circle.fill",
+                        title: lang.t("Χατ Τρικ", "Hat Trick"),
+                        color: .catGreen, unlocked: hasHatTrick),
+            Achievement(icon: "flame.fill",
+                        title: lang.t("3 Μέρες Σερί", "3-Day Streak"),
+                        color: .catOrange, unlocked: streakCount >= 3),
+            Achievement(icon: "bolt.fill",
+                        title: lang.t("7 Μέρες Σερί", "7-Day Streak"),
+                        color: .catRed, unlocked: streakCount >= 7),
+            Achievement(icon: "trophy.fill",
+                        title: lang.t("5 Εξετάσεις", "5 Exams"),
+                        color: .catPurple, unlocked: results.count >= 5),
+            Achievement(icon: "crown.fill",
+                        title: lang.t("20 Εξετάσεις", "20 Exams"),
+                        color: .greekGold, unlocked: results.count >= 20),
+        ]
+    }
+
+    private var achievementsSection: some View {
+        VStack(alignment: .leading, spacing: 12) {
+            HStack {
+                Text(lang.t("Επιτεύγματα", "Achievements"))
+                    .font(.title3.bold())
+                Spacer()
+                Text("\(achievements.filter(\.unlocked).count)/\(achievements.count)")
+                    .font(.caption.bold())
+                    .foregroundColor(.secondary)
+                    .padding(.horizontal, 10).padding(.vertical, 4)
+                    .background(Color(.systemGray5))
+                    .clipShape(Capsule())
+            }
+
+            LazyVGrid(columns: [GridItem(.flexible()), GridItem(.flexible()), GridItem(.flexible())], spacing: 10) {
+                ForEach(achievements.indices, id: \.self) { i in
+                    achievementCard(achievements[i])
+                }
+            }
+        }
+    }
+
+    private func achievementCard(_ a: Achievement) -> some View {
+        VStack(spacing: 6) {
+            ZStack {
+                Circle()
+                    .fill(a.unlocked ? a.color.opacity(0.15) : Color(.systemGray5))
+                    .frame(width: 48, height: 48)
+                Image(systemName: a.icon)
+                    .font(.title3)
+                    .foregroundColor(a.unlocked ? a.color : Color(.systemGray3))
+            }
+            Text(a.title)
+                .font(.caption2.bold())
+                .multilineTextAlignment(.center)
+                .foregroundColor(a.unlocked ? .primary : .secondary)
+                .lineLimit(2)
+            if !a.unlocked {
+                Image(systemName: "lock.fill")
+                    .font(.system(size: 9))
+                    .foregroundColor(Color(.systemGray4))
+            }
+        }
+        .frame(maxWidth: .infinity)
+        .padding(.vertical, 12)
+        .cardStyle()
+        .opacity(a.unlocked ? 1.0 : 0.6)
     }
 }
 
