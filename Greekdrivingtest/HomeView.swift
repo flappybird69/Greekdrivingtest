@@ -83,9 +83,9 @@ struct HomeView: View {
                         Image(systemName: "play.circle.fill")
                         Text(lang.t("Έναρξη Εξέτασης", "Start Exam")).fontWeight(.bold)
                     }
-                    .foregroundColor(.greekBlue)
+                    .foregroundColor(.greekDark)
                     .padding(.horizontal, 20).padding(.vertical, 11)
-                    .background(Color.white)
+                    .background(Color.greekGold)
                     .clipShape(Capsule())
                 }
                 .padding(.top, 6)
@@ -94,7 +94,7 @@ struct HomeView: View {
         }
         .frame(minHeight: 210)
         .clipShape(RoundedRectangle(cornerRadius: 28))
-        .shadow(color: .greekBlue.opacity(0.45), radius: 24, x: 0, y: 12)
+        .shadow(color: .greekGold.opacity(0.35), radius: 28, x: 0, y: 12)
     }
 
     // MARK: - Readiness Card

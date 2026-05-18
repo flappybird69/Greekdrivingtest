@@ -51,6 +51,9 @@ struct TestView: View {
                 return
             }
             timeRemaining -= 1
+            if timeRemaining == 10 {
+                UINotificationFeedbackGenerator().notificationOccurred(.warning)
+            }
         }
         .alert(lang.t("Διακοπή Εξέτασης;", "Quit Exam?"), isPresented: $showingQuitAlert) {
             Button(lang.t("Συνέχεια", "Continue"), role: .cancel) {}

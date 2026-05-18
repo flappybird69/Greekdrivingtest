@@ -431,14 +431,17 @@ struct FlashcardSessionView: View {
                         isAnswered = true
                         if index == question.correctIndex {
                             session.advanceWithResult(.correct)
+                            UIImpactFeedbackGenerator(style: .light).impactOccurred()
                         } else {
                             session.advanceWithResult(.incorrect)
+                            UINotificationFeedbackGenerator().notificationOccurred(.error)
                         }
                     },
                     onDontRemember: {
                         revealedCorrect = true
                         isAnswered = true
                         session.advanceWithResult(.incorrect)
+                        UIImpactFeedbackGenerator(style: .medium).impactOccurred()
                     },
                     selectedAnswer: selectedAnswer,
                     revealedCorrect: revealedCorrect,
@@ -986,6 +989,9 @@ struct SpeedRoundView: View {
             guard !isFinished else { return }
             if timeLeft > 0 {
                 timeLeft -= 1
+                if timeLeft == 10 {
+                    UINotificationFeedbackGenerator().notificationOccurred(.warning)
+                }
             } else {
                 finish()
             }
