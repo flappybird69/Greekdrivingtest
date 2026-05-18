@@ -1,4 +1,5 @@
 import SwiftUI
+import UIKit
 
 // MARK: - Custom Shapes
 
@@ -214,7 +215,6 @@ struct TrafficSignView: View {
             Text("\(limit)")
                 .font(.system(size: size * 0.28, weight: .bold, design: .rounded))
                 .foregroundColor(.gray)
-            // Diagonal stripes overlay
             ForEach(0..<4) { i in
                 Rectangle()
                     .fill(Color.gray.opacity(0.5))
@@ -265,7 +265,6 @@ struct TrafficSignView: View {
             Circle().fill(Color.blue)
             Circle().stroke(Color.white, lineWidth: size * 0.03)
                 .padding(size * 0.06)
-            // X mark
             Group {
                 Rectangle()
                     .fill(Color.red)
@@ -284,7 +283,6 @@ struct TrafficSignView: View {
         ZStack {
             Circle().fill(Color.white)
             Circle().stroke(Color.gray, lineWidth: size * 0.05)
-            // Multiple diagonal stripes
             ForEach(Array(stride(from: -3, through: 3, by: 1)), id: \.self) { i in
                 Rectangle()
                     .fill(Color.gray.opacity(0.5))
@@ -476,6 +474,11 @@ struct QuestionVisualView: View {
     let visual: QuestionVisual
     var size: CGFloat = 130
 
+    /// Returns the SF Symbol name if available, otherwise a fallback.
+    private static func safeSymbol(_ symbol: String) -> String {
+        UIImage(systemName: symbol) != nil ? symbol : "questionmark.circle.fill"
+    }
+
     var body: some View {
         switch visual {
         case .none:
@@ -483,7 +486,9 @@ struct QuestionVisualView: View {
         case .trafficSign(let type):
             signContainer(content: TrafficSignView(signType: type, size: size))
         case .scenario(let symbol, let colorName):
-            scenarioView(symbol: symbol, colorName: colorName)
+            scenarioView(symbol: Self.safeSymbol(symbol), colorName: colorName)
+        case .image(let named):
+            imageView(named: named)
         }
     }
 
@@ -508,6 +513,37 @@ struct QuestionVisualView: View {
             Image(systemName: symbol)
                 .font(.system(size: size * 0.55))
                 .foregroundColor(scenarioColor(colorName))
+        }
+    }
+
+    private func imageView(named: String) -> some View {
+        ZStack {
+            RoundedRectangle(cornerRadius: 16)
+                .fill(Color(.systemBackground))
+                .frame(width: size + 56, height: size + 56)
+                .shadow(color: .black.opacity(0.10), radius: 12, x: 0, y: 4)
+            RoundedRectangle(cornerRadius: 16)
+                .stroke(Color(.systemGray5), lineWidth: 1)
+                .frame(width: size + 56, height: size + 56)
+            if let uiImage = UIImage(named: named) {
+                Image(uiImage: uiImage)
+                    .resizable()
+                    .scaledToFit()
+                    .frame(width: size, height: size)
+                    .clipShape(RoundedRectangle(cornerRadius: 8))
+            } else {
+                VStack(spacing: 6) {
+                    Image(systemName: "photo")
+                        .font(.system(size: size * 0.35))
+                        .foregroundColor(Color(.systemGray3))
+                    Text(named)
+                        .font(.system(size: 10))
+                        .foregroundColor(Color(.systemGray3))
+                        .lineLimit(1)
+                        .truncationMode(.middle)
+                        .frame(width: size)
+                }
+            }
         }
     }
 

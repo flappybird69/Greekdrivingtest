@@ -13,7 +13,7 @@ struct GreekdrivingtestApp: App {
     @State private var langManager = LanguageManager()
 
     let container: ModelContainer = {
-        let schema = Schema([TestResult.self, BookmarkedQuestion.self])
+        let schema = Schema([TestResult.self, BookmarkedQuestion.self, DifficultQuestion.self])
         let config = ModelConfiguration(schema: schema, isStoredInMemoryOnly: false)
         do { return try ModelContainer(for: schema, configurations: [config]) }
         catch { fatalError("SwiftData error: \(error)") }

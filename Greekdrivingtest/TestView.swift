@@ -2,7 +2,6 @@ import SwiftUI
 import SwiftData
 import Combine
 
-// MARK: - Test Phase
 private enum TestPhase { case ready, inProgress, results }
 
 // MARK: - TestView
@@ -11,6 +10,7 @@ struct TestView: View {
     @Binding var selectedTab: Int
     @Environment(LanguageManager.self) private var lang
     @Environment(\.modelContext) private var modelContext
+    @Query private var difficultQuestions: [DifficultQuestion]
 
     @State private var phase: TestPhase = .ready
     @State private var questions: [Question] = []
@@ -28,8 +28,13 @@ struct TestView: View {
     }
     var selectedForCurrent: Int? { currentQuestion.flatMap { selectedAnswers[$0.id] } }
     var score: Int { questions.filter { selectedAnswers[$0.id] == $0.correctIndex }.count }
-    var errors: Int { questions.count - score }
-    var passed: Bool { questions.count == 30 ? score >= 27 : score >= Int(Double(questions.count) * 0.9) }
+    var runningErrors: Int {
+        questions.prefix(currentIndex + (selectedForCurrent != nil ? 1 : 0))
+            .filter { let s = selectedAnswers[$0.id]; return s != nil && s != $0.correctIndex }
+            .count
+    }
+    var totalErrors: Int { questions.count - score }
+    var passed: Bool { score >= 27 }
 
     var body: some View {
         ZStack {
@@ -65,276 +70,336 @@ struct TestView: View {
         ZStack {
             AppBackground()
             ScrollView {
-                VStack(spacing: 28) {
-                    VStack(spacing: 14) {
-                        ZStack {
-                            Circle()
-                                .fill(Color.greekBlue.opacity(0.1))
-                                .frame(width: 120, height: 120)
-                            Image(systemName: "checkmark.seal.fill")
-                                .font(.system(size: 52, weight: .semibold))
-                                .foregroundStyle(Color.greekBlue)
-                        }
-                        .padding(.top, 44)
+                VStack(spacing: 24) {
+                    // Hero
+                    ZStack(alignment: .bottomLeading) {
+                        LinearGradient(
+                            colors: [.greekBlue, .greekDark],
+                            startPoint: .topLeading, endPoint: .bottomTrailing
+                        )
+                        Circle()
+                            .fill(Color.white.opacity(0.07))
+                            .frame(width: 220, height: 220)
+                            .offset(x: 200, y: -20)
+                        Circle()
+                            .fill(Color.white.opacity(0.04))
+                            .frame(width: 120, height: 120)
+                            .offset(x: 260, y: 40)
 
-                        Text(lang.t("Θεωρητική Εξέταση", "Theory Exam"))
-                            .font(.system(size: 28, weight: .bold, design: .rounded))
-
-                        Text(lang.t("Προσομοίωση εξέτασης ΚΟΚ", "Greek KOK exam simulation"))
+                        VStack(alignment: .leading, spacing: 12) {
+                            ZStack {
+                                Circle()
+                                    .fill(Color.white.opacity(0.18))
+                                    .frame(width: 68, height: 68)
+                                Image(systemName: "checkmark.seal.fill")
+                                    .font(.system(size: 32, weight: .semibold))
+                                    .foregroundStyle(.white)
+                            }
+                            Text(lang.t("Θεωρητική Εξέταση ΚΟΚ", "KOK Theory Exam"))
+                                .font(.system(size: 22, weight: .bold, design: .rounded))
+                                .foregroundStyle(.white)
+                            Text(lang.t(
+                                "30 ερωτήσεις · 45 λεπτά · Μέγιστο 3 λάθη",
+                                "30 questions · 45 minutes · Max 3 errors"
+                            ))
                             .font(.subheadline)
-                            .foregroundStyle(.secondary)
-                            .multilineTextAlignment(.center)
+                            .foregroundStyle(.white.opacity(0.72))
+                        }
+                        .padding(24)
                     }
-                    .padding(.horizontal, 24)
+                    .frame(minHeight: 190)
+                    .clipShape(RoundedRectangle(cornerRadius: 24))
+                    .shadow(color: .greekBlue.opacity(0.45), radius: 22, x: 0, y: 10)
+                    .padding(.horizontal, 16)
+                    .padding(.top, 16)
 
+                    // Rules card
                     VStack(spacing: 0) {
-                        examInfoRow(icon: "list.number", color: .catBlue,
-                                    title: lang.t("Ερωτήσεις", "Questions"), value: "30")
-                        Divider().padding(.horizontal, 16)
-                        examInfoRow(icon: "clock.fill", color: .catOrange,
-                                    title: lang.t("Χρόνος", "Time Limit"), value: lang.t("45 λεπτά", "45 min"))
-                        Divider().padding(.horizontal, 16)
-                        examInfoRow(icon: "xmark.circle.fill", color: .catRed,
-                                    title: lang.t("Μέγιστα λάθη", "Max errors"), value: "3")
-                        Divider().padding(.horizontal, 16)
-                        examInfoRow(icon: "star.fill", color: .catGreen,
-                                    title: lang.t("Βάση επιτυχίας", "Pass mark"), value: "27/30")
+                        readyRuleRow(icon: "list.number", color: .catBlue,
+                                     title: lang.t("Ερωτήσεις", "Questions"), value: "30", last: false)
+                        readyRuleRow(icon: "clock.fill", color: .catOrange,
+                                     title: lang.t("Χρόνος", "Time Limit"), value: lang.t("45 λεπτά", "45 min"), last: false)
+                        readyRuleRow(icon: "xmark.circle.fill", color: .catRed,
+                                     title: lang.t("Μέγιστα λάθη", "Max errors"), value: "3", last: false)
+                        readyRuleRow(icon: "checkmark.circle.fill", color: .catGreen,
+                                     title: lang.t("Βαθμός επιτυχίας", "Pass mark"), value: "27/30", last: true)
                     }
                     .cardStyle()
-                    .padding(.horizontal, 20)
+                    .padding(.horizontal, 16)
 
+                    // Start
                     Button { startExam() } label: {
-                        HStack(spacing: 10) {
+                        HStack(spacing: 12) {
                             Image(systemName: "play.fill")
+                                .font(.system(size: 15, weight: .bold))
                             Text(lang.t("Έναρξη Εξέτασης", "Start Exam"))
+                                .font(.title3.bold())
                         }
-                        .font(.headline)
                         .foregroundStyle(.white)
                         .frame(maxWidth: .infinity)
                         .padding(.vertical, 18)
-                        .background(Color.greekBlue)
+                        .background(
+                            LinearGradient(colors: [.greekBlue, .greekDark],
+                                           startPoint: .leading, endPoint: .trailing)
+                        )
                         .clipShape(RoundedRectangle(cornerRadius: 16))
-                        .shadow(color: .greekBlue.opacity(0.35), radius: 12, x: 0, y: 6)
+                        .shadow(color: .greekBlue.opacity(0.4), radius: 16, x: 0, y: 8)
                     }
-                    .padding(.horizontal, 20)
-                    .padding(.bottom, 40)
+                    .padding(.horizontal, 16)
+                    .padding(.bottom, 36)
                 }
             }
         }
     }
 
-    private func examInfoRow(icon: String, color: Color, title: String, value: String) -> some View {
-        HStack {
-            HStack(spacing: 10) {
-                Image(systemName: icon)
-                    .font(.system(size: 14, weight: .semibold))
-                    .foregroundStyle(color)
-                    .frame(width: 20)
-                Text(title).foregroundStyle(.primary)
+    private func readyRuleRow(icon: String, color: Color, title: String, value: String, last: Bool) -> some View {
+        VStack(spacing: 0) {
+            HStack(spacing: 14) {
+                ZStack {
+                    RoundedRectangle(cornerRadius: 9)
+                        .fill(color.opacity(0.12))
+                        .frame(width: 38, height: 38)
+                    Image(systemName: icon)
+                        .font(.system(size: 15, weight: .semibold))
+                        .foregroundStyle(color)
+                }
+                Text(title).font(.subheadline)
+                Spacer()
+                Text(value).font(.subheadline.bold()).foregroundStyle(.secondary)
             }
-            Spacer()
-            Text(value)
-                .fontWeight(.semibold)
-                .foregroundStyle(.secondary)
+            .padding(.horizontal, 16)
+            .padding(.vertical, 14)
+            if !last { Divider().padding(.leading, 68) }
         }
-        .padding(.horizontal, 16)
-        .padding(.vertical, 15)
     }
 
     // MARK: - Exam Screen
 
     private var examView: some View {
-        ZStack(alignment: .top) {
-            Color(.systemGroupedBackground).ignoresSafeArea()
+        VStack(spacing: 0) {
+            examTopBar
+                .background(.regularMaterial)
+                .overlay(alignment: .bottom) { Divider() }
 
-            VStack(spacing: 0) {
-                examNavBar
-                    .background(.regularMaterial)
+            if let q = currentQuestion {
+                ScrollView {
+                    VStack(spacing: 0) {
+                        questionCard(q)
+                        answersBlock(q)
+                        if selectedForCurrent != nil {
+                            explanationStrip(q)
+                                .padding(.horizontal, 16)
+                                .padding(.vertical, 10)
+                                .transition(.asymmetric(
+                                    insertion: .move(edge: .bottom).combined(with: .opacity),
+                                    removal: .opacity
+                                ))
+                        }
+                        Spacer(minLength: 110)
+                    }
+                }
+                .id(q.id)
 
-                // Thin progress bar
+                if selectedForCurrent != nil {
+                    nextBar
+                        .transition(.move(edge: .bottom).combined(with: .opacity))
+                }
+            }
+        }
+        .background(Color(.systemGroupedBackground).ignoresSafeArea())
+        .animation(.spring(response: 0.33, dampingFraction: 0.85), value: selectedForCurrent)
+        .animation(.easeInOut(duration: 0.22), value: currentIndex)
+    }
+
+    private var examTopBar: some View {
+        VStack(spacing: 8) {
+            HStack {
+                // Exit
+                Button { showingQuitAlert = true } label: {
+                    Image(systemName: "xmark")
+                        .font(.system(size: 13, weight: .bold))
+                        .foregroundStyle(.secondary)
+                        .frame(width: 30, height: 30)
+                        .background(Color(.systemGray5))
+                        .clipShape(Circle())
+                }
+
+                Spacer()
+
+                Text("\(currentIndex + 1) / \(questions.count)")
+                    .font(.system(.subheadline, design: .rounded).weight(.bold))
+
+                Spacer()
+
+                // Timer
+                HStack(spacing: 5) {
+                    Image(systemName: "clock.fill")
+                        .font(.system(size: 10, weight: .semibold))
+                        .foregroundStyle(timeRemaining < 300 ? Color.catRed : Color.catOrange)
+                    Text(timeString)
+                        .font(.system(.subheadline, design: .monospaced).weight(.bold))
+                        .foregroundStyle(timeRemaining < 300 ? Color.catRed : .primary)
+                }
+                .padding(.horizontal, 10)
+                .padding(.vertical, 5)
+                .background(
+                    Capsule().fill(timeRemaining < 300 ? Color.catRed.opacity(0.1) : Color(.systemGray6))
+                )
+            }
+            .padding(.horizontal, 16)
+
+            // Error dots + progress bar
+            HStack {
+                HStack(spacing: 7) {
+                    ForEach(0..<3, id: \.self) { slot in
+                        Circle()
+                            .fill(slot < runningErrors ? Color.catRed : Color(.systemGray4))
+                            .frame(width: 11, height: 11)
+                            .scaleEffect(slot < runningErrors ? 1.2 : 1.0)
+                            .animation(.spring(response: 0.3), value: runningErrors)
+                    }
+                    Text(lang.t("λάθη", "errors"))
+                        .font(.caption2.weight(.semibold))
+                        .foregroundStyle(.secondary)
+                        .padding(.leading, 2)
+                }
+
+                Spacer()
+
                 GeometryReader { geo in
                     ZStack(alignment: .leading) {
-                        Rectangle().fill(Color(.systemGray5)).frame(height: 3)
-                        Rectangle().fill(Color.greekBlue)
+                        Capsule().fill(Color(.systemGray5)).frame(height: 5)
+                        Capsule().fill(Color.greekBlue)
                             .frame(
                                 width: geo.size.width * CGFloat(currentIndex + 1) / CGFloat(max(questions.count, 1)),
-                                height: 3
+                                height: 5
                             )
                             .animation(.spring(response: 0.4), value: currentIndex)
                     }
                 }
-                .frame(height: 3)
+                .frame(width: 130, height: 5)
+            }
+            .padding(.horizontal, 16)
+            .padding(.bottom, 10)
+        }
+        .padding(.top, 8)
+    }
 
-                if let q = currentQuestion {
-                    ScrollView {
-                        VStack(spacing: 0) {
-                            // Question card: header + image + text
-                            VStack(alignment: .leading, spacing: 16) {
-                                HStack {
-                                    Text((lang.language.isGreek ? "Ερώτηση " : "Question ") + "\(currentIndex + 1)")
-                                        .font(.caption.weight(.semibold))
-                                        .foregroundStyle(.secondary)
-                                        .textCase(.uppercase)
-                                        .tracking(0.5)
-                                    Spacer()
-                                    Text(q.category.name(greek: lang.language.isGreek))
-                                        .font(.caption.weight(.semibold))
-                                        .foregroundStyle(categoryColor(q.category))
-                                        .padding(.horizontal, 8)
-                                        .padding(.vertical, 3)
-                                        .background(categoryColor(q.category).opacity(0.12), in: Capsule())
-                                }
-
-                                // Visual — large and centered like the real exam
-                                switch q.visual {
-                                case .none:
-                                    EmptyView()
-                                default:
-                                    HStack {
-                                        Spacer()
-                                        QuestionVisualView(visual: q.visual, size: 160)
-                                        Spacer()
-                                    }
-                                }
-
-                                Text(q.text(greek: lang.language.isGreek))
-                                    .font(.system(.body).weight(.medium))
-                                    .multilineTextAlignment(.center)
-                                    .frame(maxWidth: .infinity)
-                            }
-                            .padding(20)
-                            .background(Color(.systemBackground))
-
-                            Divider()
-
-                            // Answer options — iOS list style
-                            VStack(spacing: 0) {
-                                ForEach(q.options(greek: lang.language.isGreek).indices, id: \.self) { i in
-                                    AnswerButton(
-                                        label: ["Α", "Β", "Γ", "Δ"][i],
-                                        text: q.options(greek: lang.language.isGreek)[i],
-                                        state: answerState(for: i, question: q),
-                                        isEnabled: selectedForCurrent == nil
-                                    ) { selectAnswer(i, for: q) }
-
-                                    if i < q.options(greek: lang.language.isGreek).count - 1 {
-                                        Divider().padding(.leading, 62)
-                                    }
-                                }
-                            }
-                            .background(Color(.systemBackground))
-
-                            // Explanation strip
-                            if selectedForCurrent != nil {
-                                explanationCard(for: q)
-                                    .transition(.move(edge: .bottom).combined(with: .opacity))
-                            }
-
-                            Spacer(minLength: 100)
-                        }
-                        .padding(.top, 12)
-                        .padding(.horizontal, 16)
-                    }
-
-                    // Sticky next button
-                    if selectedForCurrent != nil {
-                        VStack(spacing: 0) {
-                            Divider()
-                            Button { advanceQuestion() } label: {
-                                HStack(spacing: 8) {
-                                    Text(currentIndex < questions.count - 1
-                                         ? lang.t("Επόμενη Ερώτηση", "Next Question")
-                                         : lang.t("Τέλος Εξέτασης", "Finish Exam"))
-                                    Image(systemName: currentIndex < questions.count - 1
-                                          ? "arrow.right" : "flag.checkered")
-                                }
-                                .font(.headline)
-                                .foregroundStyle(.white)
-                                .frame(maxWidth: .infinity)
-                                .padding(.vertical, 16)
-                                .background(Color.greekBlue)
-                                .clipShape(RoundedRectangle(cornerRadius: 14))
-                            }
-                            .padding(.horizontal, 16)
-                            .padding(.vertical, 12)
-                            .background(.regularMaterial)
-                        }
-                        .transition(.move(edge: .bottom).combined(with: .opacity))
+    private func questionCard(_ q: Question) -> some View {
+        VStack(spacing: 16) {
+            HStack(alignment: .center) {
+                Text((lang.language.isGreek ? "Ερώτηση " : "Q ") + "\(currentIndex + 1)")
+                    .font(.caption.weight(.semibold))
+                    .foregroundStyle(.secondary)
+                    .textCase(.uppercase)
+                    .tracking(0.6)
+                Spacer()
+                HStack(spacing: 8) {
+                    Text(q.category.name(greek: lang.language.isGreek))
+                        .font(.caption.weight(.semibold))
+                        .foregroundStyle(categoryColor(q.category))
+                        .padding(.horizontal, 8).padding(.vertical, 3)
+                        .background(categoryColor(q.category).opacity(0.1), in: Capsule())
+                    Button { toggleDifficult(q.id) } label: {
+                        Image(systemName: isDifficult(q.id) ? "flag.fill" : "flag")
+                            .font(.system(size: 13, weight: .semibold))
+                            .foregroundStyle(isDifficult(q.id) ? Color.catOrange : Color(.systemGray3))
                     }
                 }
             }
-        }
-        .animation(.spring(response: 0.3), value: selectedForCurrent)
-    }
 
-    private var examNavBar: some View {
-        HStack {
-            Button { showingQuitAlert = true } label: {
-                HStack(spacing: 4) {
-                    Image(systemName: "chevron.left")
-                        .font(.system(size: 14, weight: .semibold))
-                    Text(lang.t("Μενού", "Menu"))
-                        .font(.system(size: 15, weight: .semibold))
+            switch q.visual {
+            case .none: EmptyView()
+            default:
+                HStack {
+                    Spacer()
+                    QuestionVisualView(visual: q.visual, size: 155)
+                    Spacer()
                 }
-                .foregroundStyle(Color.greekBlue)
+                .padding(.vertical, 4)
             }
 
-            Spacer()
-
-            Text("\(currentIndex + 1) / \(questions.count)")
-                .font(.system(.subheadline, design: .rounded).weight(.bold))
-
-            Spacer()
-
-            HStack(spacing: 4) {
-                Image(systemName: "clock")
-                    .font(.system(size: 12, weight: .medium))
-                    .foregroundStyle(timeRemaining < 300 ? Color.catRed : Color.catOrange)
-                Text(timeString)
-                    .font(.system(.subheadline, design: .monospaced).weight(.semibold))
-                    .foregroundStyle(timeRemaining < 300 ? Color.catRed : .primary)
-            }
-            .padding(.horizontal, 10)
-            .padding(.vertical, 6)
-            .background(
-                Capsule().fill(timeRemaining < 300 ? Color.catRed.opacity(0.12) : Color(.systemGray6))
-            )
+            Text(q.text(greek: lang.language.isGreek))
+                .font(.system(.body).weight(.medium))
+                .multilineTextAlignment(.center)
+                .frame(maxWidth: .infinity)
+                .fixedSize(horizontal: false, vertical: true)
         }
-        .padding(.horizontal, 16)
-        .padding(.vertical, 12)
+        .padding(20)
+        .background(Color(.systemBackground))
     }
 
-    private var timeString: String {
-        String(format: "%02d:%02d", timeRemaining / 60, timeRemaining % 60)
+    private func answersBlock(_ q: Question) -> some View {
+        let opts = q.options(greek: lang.language.isGreek)
+        return VStack(spacing: 0) {
+            Divider()
+            VStack(spacing: 0) {
+                ForEach(opts.indices, id: \.self) { i in
+                    ExamAnswerRow(
+                        index: i,
+                        text: opts[i],
+                        state: answerState(for: i, question: q),
+                        isEnabled: selectedForCurrent == nil
+                    ) { selectAnswer(i, for: q) }
+                    if i < opts.count - 1 {
+                        Divider().padding(.leading, 64)
+                    }
+                }
+            }
+            .background(Color(.systemBackground))
+        }
     }
 
-    private func answerState(for i: Int, question: Question) -> AnswerButtonState {
-        guard let selected = selectedAnswers[question.id] else { return .idle }
-        if i == question.correctIndex { return .correct }
-        if i == selected { return .wrong }
-        return .missed
-    }
-
-    private func explanationCard(for q: Question) -> some View {
+    @ViewBuilder
+    private func explanationStrip(_ q: Question) -> some View {
         let expl = q.explanation(greek: lang.language.isGreek)
-        return Group {
-            if !expl.isEmpty {
-                HStack(alignment: .top, spacing: 12) {
-                    Image(systemName: "lightbulb.fill")
-                        .foregroundStyle(Color.catOrange)
-                        .font(.subheadline)
-                    Text(expl).font(.subheadline)
-                }
-                .padding(16)
-                .frame(maxWidth: .infinity, alignment: .leading)
-                .background(Color.catOrange.opacity(0.08))
-                .overlay(
-                    Rectangle().fill(Color.catOrange).frame(width: 3),
-                    alignment: .leading
-                )
-                .clipShape(RoundedRectangle(cornerRadius: 10))
-                .padding(.top, 2)
+        let wasCorrect = selectedAnswers[q.id] == q.correctIndex
+        if !expl.isEmpty {
+            HStack(alignment: .top, spacing: 10) {
+                Image(systemName: "lightbulb.fill").foregroundStyle(Color.catOrange).font(.subheadline)
+                Text(expl).font(.subheadline)
             }
+            .padding(14)
+            .frame(maxWidth: .infinity, alignment: .leading)
+            .background(Color.catOrange.opacity(0.07))
+            .clipShape(RoundedRectangle(cornerRadius: 12))
+            .overlay(RoundedRectangle(cornerRadius: 12).stroke(Color.catOrange.opacity(0.2), lineWidth: 1))
+        } else if !wasCorrect {
+            HStack(spacing: 10) {
+                Image(systemName: "checkmark.circle.fill").foregroundStyle(Color.passGreen).font(.subheadline)
+                Text(lang.t("Σωστή: ", "Correct: ") + q.options(greek: lang.language.isGreek)[q.correctIndex])
+                    .font(.subheadline).foregroundStyle(Color.passGreen)
+            }
+            .padding(14)
+            .frame(maxWidth: .infinity, alignment: .leading)
+            .background(Color.passGreen.opacity(0.07))
+            .clipShape(RoundedRectangle(cornerRadius: 12))
+        }
+    }
+
+    private var nextBar: some View {
+        VStack(spacing: 0) {
+            Divider()
+            Button { advanceQuestion() } label: {
+                HStack(spacing: 10) {
+                    Text(currentIndex < questions.count - 1
+                         ? lang.t("Επόμενη Ερώτηση", "Next Question")
+                         : lang.t("Τέλος Εξέτασης", "Finish Exam"))
+                        .font(.headline)
+                    Image(systemName: currentIndex < questions.count - 1 ? "arrow.right" : "flag.checkered")
+                        .font(.headline)
+                }
+                .foregroundStyle(.white)
+                .frame(maxWidth: .infinity)
+                .padding(.vertical, 16)
+                .background(
+                    LinearGradient(colors: [.greekBlue, .greekDark], startPoint: .leading, endPoint: .trailing)
+                )
+                .clipShape(RoundedRectangle(cornerRadius: 14))
+            }
+            .padding(.horizontal, 16)
+            .padding(.vertical, 12)
+            .background(.regularMaterial)
         }
     }
 
@@ -342,7 +407,8 @@ struct TestView: View {
 
     private var resultsView: some View {
         ZStack {
-            Color(.systemGroupedBackground).ignoresSafeArea()
+            (passed ? Color.passGreen.opacity(0.03) : Color(.systemGroupedBackground))
+                .ignoresSafeArea()
 
             VStack(spacing: 0) {
                 // Nav bar
@@ -350,104 +416,112 @@ struct TestView: View {
                     Button {
                         withAnimation(.easeInOut(duration: 0.3)) { phase = .ready }
                     } label: {
-                        HStack(spacing: 4) {
-                            Image(systemName: "chevron.left")
-                                .font(.system(size: 14, weight: .semibold))
-                            Text(lang.t("Εξέταση", "Exam"))
-                                .font(.system(size: 15, weight: .semibold))
-                        }
-                        .foregroundStyle(Color.greekBlue)
+                        Image(systemName: "xmark")
+                            .font(.system(size: 13, weight: .bold))
+                            .foregroundStyle(.secondary)
+                            .frame(width: 30, height: 30)
+                            .background(Color(.systemGray5))
+                            .clipShape(Circle())
                     }
                     Spacer()
                     Text(lang.t("Αποτελέσματα", "Results")).font(.headline)
                     Spacer()
-                    Color.clear.frame(width: 70)
+                    Color.clear.frame(width: 30, height: 30)
                 }
                 .padding(.horizontal, 16)
                 .padding(.vertical, 14)
                 .background(.regularMaterial)
-
-                Divider()
+                .overlay(alignment: .bottom) { Divider() }
 
                 ScrollView {
-                    VStack(spacing: 20) {
+                    VStack(spacing: 24) {
                         // Score ring
-                        VStack(spacing: 14) {
+                        VStack(spacing: 16) {
                             ZStack {
                                 Circle()
-                                    .stroke(Color(.systemGray5), lineWidth: 16)
-                                    .frame(width: 160, height: 160)
+                                    .stroke(Color(.systemGray5), lineWidth: 18)
+                                    .frame(width: 180, height: 180)
                                 Circle()
-                                    .trim(from: 0, to: CGFloat(score) / CGFloat(max(questions.count, 1)))
+                                    .trim(from: 0, to: CGFloat(score) / 30.0)
                                     .stroke(
-                                        passed ? Color.passGreen : Color.failRed,
-                                        style: StrokeStyle(lineWidth: 16, lineCap: .round)
+                                        LinearGradient(
+                                            colors: passed ? [.passGreen, .catGreen] : [.failRed, .catRed],
+                                            startPoint: .topLeading, endPoint: .bottomTrailing
+                                        ),
+                                        style: StrokeStyle(lineWidth: 18, lineCap: .round)
                                     )
-                                    .frame(width: 160, height: 160)
+                                    .frame(width: 180, height: 180)
                                     .rotationEffect(.degrees(-90))
-                                    .animation(.spring(response: 1.2, dampingFraction: 0.7), value: score)
+                                    .animation(.spring(response: 1.4, dampingFraction: 0.65), value: score)
+
                                 VStack(spacing: 2) {
-                                    Text("\(score)/\(questions.count)")
-                                        .font(.system(size: 36, weight: .bold, design: .rounded))
-                                    Text(passed ? lang.t("ΕΠΙΤΥΧΙΑ", "PASSED") : lang.t("ΑΠΟΤΥΧΙΑ", "FAILED"))
-                                        .font(.caption.bold()).tracking(1.5)
+                                    Text("\(score)")
+                                        .font(.system(size: 54, weight: .bold, design: .rounded))
                                         .foregroundStyle(passed ? Color.passGreen : Color.failRed)
+                                    Text("/ 30")
+                                        .font(.title3.bold())
+                                        .foregroundStyle(.secondary)
                                 }
                             }
+                            .padding(.top, 28)
 
-                            Label(
-                                passed
-                                    ? lang.t("Συγχαρητήρια! Πέρασες!", "Congratulations! You passed!")
-                                    : lang.t("Δεν πέρασες. Ξαναπροσπάθησε!", "You didn't pass. Try again!"),
-                                systemImage: passed ? "checkmark.seal.fill" : "xmark.seal.fill"
-                            )
-                            .font(.subheadline.weight(.semibold))
-                            .foregroundStyle(passed ? Color.passGreen : Color.failRed)
-                            .padding(.horizontal, 16).padding(.vertical, 8)
-                            .background(
-                                Capsule().fill(passed
-                                    ? Color.passGreen.opacity(0.1)
-                                    : Color.failRed.opacity(0.1))
-                            )
+                            HStack(spacing: 10) {
+                                Image(systemName: passed ? "checkmark.seal.fill" : "xmark.seal.fill")
+                                    .font(.title3.bold())
+                                    .foregroundStyle(passed ? Color.passGreen : Color.failRed)
+                                Text(passed ? lang.t("ΕΠΙΤΥΧΙΑ", "PASSED") : lang.t("ΑΠΟΤΥΧΙΑ", "FAILED"))
+                                    .font(.title3.bold())
+                                    .tracking(2)
+                                    .foregroundStyle(passed ? Color.passGreen : Color.failRed)
+                            }
+                            .padding(.horizontal, 20).padding(.vertical, 10)
+                            .background(Capsule().fill(passed ? Color.passGreen.opacity(0.1) : Color.failRed.opacity(0.1)))
+
+                            Text(passed
+                                 ? lang.t("Συγχαρητήρια! Πέρασες την εξέταση.", "Congratulations! You passed the exam.")
+                                 : lang.t("Δεν πέρασες. Συνέχισε την εξάσκηση!", "You didn't pass. Keep practicing!"))
+                                .font(.subheadline)
+                                .foregroundStyle(.secondary)
+                                .multilineTextAlignment(.center)
+                                .padding(.horizontal, 32)
                         }
-                        .padding(.top, 28)
 
                         // Stats
                         HStack(spacing: 12) {
-                            ResultStat(value: "\(score)", label: lang.t("Σωστές", "Correct"), color: .passGreen)
-                            ResultStat(value: "\(errors)", label: lang.t("Λάθη", "Errors"),
-                                       color: errors <= 3 ? .catOrange : .failRed)
-                            ResultStat(value: timeUsedString, label: lang.t("Χρόνος", "Time"), color: .catBlue)
+                            ResultStatCard(value: "\(score)", label: lang.t("Σωστές", "Correct"),
+                                           color: .passGreen, icon: "checkmark.circle.fill")
+                            ResultStatCard(value: "\(totalErrors)", label: lang.t("Λάθη", "Errors"),
+                                           color: totalErrors <= 3 ? .catOrange : .failRed, icon: "xmark.circle.fill")
+                            ResultStatCard(value: timeUsedString, label: lang.t("Χρόνος", "Time"),
+                                           color: .catBlue, icon: "clock.fill")
                         }
                         .padding(.horizontal, 16)
 
-                        // Action buttons
+                        // Actions
                         VStack(spacing: 10) {
                             Button { restartExam() } label: {
-                                HStack(spacing: 8) {
+                                HStack(spacing: 10) {
                                     Image(systemName: "arrow.clockwise")
                                     Text(lang.t("Νέα Εξέταση", "New Exam"))
                                 }
-                                .font(.headline)
-                                .foregroundStyle(.white)
-                                .frame(maxWidth: .infinity)
-                                .padding(.vertical, 16)
-                                .background(Color.greekBlue)
+                                .font(.headline).foregroundStyle(.white)
+                                .frame(maxWidth: .infinity).padding(.vertical, 16)
+                                .background(LinearGradient(colors: [.greekBlue, .greekDark],
+                                                           startPoint: .leading, endPoint: .trailing))
                                 .clipShape(RoundedRectangle(cornerRadius: 14))
+                                .shadow(color: .greekBlue.opacity(0.3), radius: 10, x: 0, y: 5)
                             }
 
                             Button {
                                 withAnimation(.easeInOut(duration: 0.3)) { phase = .ready }
                                 selectedTab = 0
                             } label: {
-                                HStack(spacing: 8) {
+                                HStack(spacing: 10) {
                                     Image(systemName: "house.fill")
                                     Text(lang.t("Κεντρικό Μενού", "Main Menu"))
                                 }
-                                .font(.headline)
-                                .foregroundStyle(Color.greekBlue)
-                                .frame(maxWidth: .infinity)
-                                .padding(.vertical, 16)
+                                .font(.headline).foregroundStyle(Color.greekBlue)
+                                .frame(maxWidth: .infinity).padding(.vertical, 16)
                                 .background(Color.greekBlue.opacity(0.1))
                                 .clipShape(RoundedRectangle(cornerRadius: 14))
                             }
@@ -457,15 +531,14 @@ struct TestView: View {
                         // Wrong answers review
                         let wrong = questions.filter { selectedAnswers[$0.id] != $0.correctIndex }
                         if !wrong.isEmpty {
-                            VStack(alignment: .leading, spacing: 10) {
+                            VStack(alignment: .leading, spacing: 12) {
                                 HStack {
-                                    Text(lang.t("Λανθασμένες Απαντήσεις", "Wrong Answers"))
-                                        .font(.title3.bold())
+                                    Image(systemName: "xmark.circle.fill").foregroundStyle(Color.failRed)
+                                    Text(lang.t("Λανθασμένες Απαντήσεις", "Wrong Answers")).font(.headline)
                                     Spacer()
                                     Text("\(wrong.count)")
-                                        .font(.caption.bold())
-                                        .foregroundStyle(.white)
-                                        .padding(.horizontal, 8).padding(.vertical, 4)
+                                        .font(.caption.bold()).foregroundStyle(.white)
+                                        .padding(.horizontal, 8).padding(.vertical, 3)
                                         .background(Color.failRed, in: Capsule())
                                 }
                                 .padding(.horizontal, 16)
@@ -484,10 +557,34 @@ struct TestView: View {
         }
     }
 
+    // MARK: - Helpers
+
+    private var timeString: String {
+        String(format: "%02d:%02d", timeRemaining / 60, timeRemaining % 60)
+    }
     private var timeUsedString: String {
         let used = (45 * 60) - timeRemaining
         let m = used / 60
         return m == 0 ? "<1m" : "\(m)m"
+    }
+
+    private func answerState(for i: Int, question: Question) -> ExamAnswerState {
+        guard let selected = selectedAnswers[question.id] else { return .idle }
+        if i == question.correctIndex { return .correct }
+        if i == selected { return .wrong }
+        return .dimmed
+    }
+
+    private func isDifficult(_ id: Int) -> Bool {
+        difficultQuestions.contains { $0.questionId == id }
+    }
+    private func toggleDifficult(_ id: Int) {
+        if let existing = difficultQuestions.first(where: { $0.questionId == id }) {
+            modelContext.delete(existing)
+        } else {
+            modelContext.insert(DifficultQuestion(questionId: id))
+        }
+        UIImpactFeedbackGenerator(style: .light).impactOccurred()
     }
 
     // MARK: - Actions
@@ -500,21 +597,18 @@ struct TestView: View {
         timerActive = true
         withAnimation(.easeInOut(duration: 0.3)) { phase = .inProgress }
     }
-
     private func selectAnswer(_ i: Int, for q: Question) {
         guard selectedAnswers[q.id] == nil else { return }
         withAnimation(.spring(response: 0.3)) { selectedAnswers[q.id] = i }
         UIImpactFeedbackGenerator(style: i == q.correctIndex ? .light : .heavy).impactOccurred()
     }
-
     private func advanceQuestion() {
         if currentIndex < questions.count - 1 {
-            withAnimation(.easeInOut(duration: 0.25)) { currentIndex += 1 }
+            withAnimation(.easeInOut(duration: 0.22)) { currentIndex += 1 }
         } else {
             finishExam()
         }
     }
-
     private func finishExam() {
         timerActive = false
         let timeElapsed = TimeInterval((45 * 60) - timeRemaining)
@@ -525,64 +619,68 @@ struct TestView: View {
         modelContext.insert(result)
         withAnimation(.easeInOut(duration: 0.3)) { phase = .results }
     }
-
     private func restartExam() {
         withAnimation(.easeInOut(duration: 0.3)) { phase = .ready }
     }
 }
 
-// MARK: - Answer Button
+// MARK: - Exam Answer Row
 
-struct AnswerButton: View {
-    let label: String
+enum ExamAnswerState { case idle, correct, wrong, dimmed }
+
+struct ExamAnswerRow: View {
+    let index: Int
     let text: String
-    let state: AnswerButtonState
+    let state: ExamAnswerState
     let isEnabled: Bool
     let action: () -> Void
 
-    enum AnswerButtonState { case idle, correct, wrong, missed }
+    private let letters = ["Α", "Β", "Γ", "Δ"]
 
-    private var rowBg: Color {
-        switch state {
-        case .correct: return Color.passGreen.opacity(0.08)
-        case .wrong:   return Color.failRed.opacity(0.08)
-        default:       return .clear
-        }
-    }
-    private var circleBg: Color {
+    private var badgeBg: Color {
         switch state {
         case .correct: return .passGreen
         case .wrong:   return .failRed
         default:       return Color(.systemGray5)
         }
     }
+    private var rowBg: Color {
+        switch state {
+        case .correct: return Color.passGreen.opacity(0.07)
+        case .wrong:   return Color.failRed.opacity(0.07)
+        default:       return .clear
+        }
+    }
     private var textColor: Color {
         switch state {
         case .correct: return .passGreen
         case .wrong:   return .failRed
+        case .dimmed:  return Color(.systemGray2)
         default:       return .primary
         }
     }
 
     var body: some View {
         Button(action: action) {
-            HStack(spacing: 12) {
+            HStack(spacing: 14) {
                 ZStack {
-                    Circle().fill(circleBg).frame(width: 34, height: 34)
+                    RoundedRectangle(cornerRadius: 10)
+                        .fill(badgeBg)
+                        .frame(width: 38, height: 38)
                     Group {
                         switch state {
                         case .correct:
                             Image(systemName: "checkmark")
-                                .font(.system(size: 13, weight: .bold))
+                                .font(.system(size: 14, weight: .bold))
                                 .foregroundStyle(.white)
                         case .wrong:
                             Image(systemName: "xmark")
-                                .font(.system(size: 13, weight: .bold))
+                                .font(.system(size: 14, weight: .bold))
                                 .foregroundStyle(.white)
                         default:
-                            Text(label)
+                            Text(letters[min(index, letters.count - 1)])
                                 .font(.system(.subheadline, design: .rounded).weight(.bold))
-                                .foregroundStyle(.secondary)
+                                .foregroundStyle(state == .dimmed ? Color(.systemGray3) : .secondary)
                         }
                     }
                 }
@@ -590,39 +688,42 @@ struct AnswerButton: View {
                 Text(text)
                     .font(.subheadline)
                     .foregroundStyle(textColor)
+                    .fontWeight(state == .correct ? .semibold : .regular)
                     .multilineTextAlignment(.leading)
                     .frame(maxWidth: .infinity, alignment: .leading)
-
-                if state == .missed {
-                    Circle()
-                        .stroke(Color(.systemGray4), lineWidth: 1.5)
-                        .frame(width: 20, height: 20)
-                }
             }
             .padding(.horizontal, 16)
-            .padding(.vertical, 14)
+            .padding(.vertical, 15)
             .frame(maxWidth: .infinity)
             .background(rowBg)
+            .contentShape(Rectangle())
         }
         .disabled(!isEnabled)
         .animation(.spring(response: 0.3), value: state)
     }
 }
 
-// MARK: - Result Stat
+// MARK: - Result Stat Card
 
-struct ResultStat: View {
+struct ResultStatCard: View {
     let value: String
     let label: String
     let color: Color
+    let icon: String
 
     var body: some View {
-        VStack(spacing: 4) {
-            Text(value).font(.title2.bold()).foregroundStyle(color)
+        VStack(spacing: 8) {
+            Image(systemName: icon)
+                .font(.system(size: 16, weight: .semibold))
+                .foregroundStyle(color)
+                .frame(width: 36, height: 36)
+                .background(color.opacity(0.12))
+                .clipShape(RoundedRectangle(cornerRadius: 10))
+            Text(value).font(.title3.bold()).foregroundStyle(color)
             Text(label).font(.caption).foregroundStyle(.secondary)
         }
         .frame(maxWidth: .infinity)
-        .padding(.vertical, 14)
+        .padding(.vertical, 16)
         .cardStyle()
     }
 }
@@ -635,10 +736,11 @@ struct WrongAnswerCard: View {
     let selectedIndex: Int?
 
     var body: some View {
-        VStack(alignment: .leading, spacing: 10) {
+        VStack(alignment: .leading, spacing: 12) {
             switch question.visual {
             case .none: EmptyView()
             default:    QuestionVisualView(visual: question.visual, size: 70)
+                            .frame(maxWidth: .infinity, alignment: .center)
             }
 
             Text(question.text(greek: lang.language.isGreek))
@@ -655,18 +757,17 @@ struct WrongAnswerCard: View {
             HStack(spacing: 8) {
                 Image(systemName: "checkmark.circle.fill").foregroundStyle(Color.passGreen)
                 Text(question.options(greek: lang.language.isGreek)[question.correctIndex])
-                    .font(.subheadline).foregroundStyle(Color.passGreen)
+                    .font(.subheadline.bold()).foregroundStyle(Color.passGreen)
             }
 
             let expl = question.explanation(greek: lang.language.isGreek)
             if !expl.isEmpty {
                 Text(expl).font(.caption).foregroundStyle(.secondary)
+                    .padding(.top, 2)
             }
         }
         .padding(14)
         .cardStyle()
-        .overlay(RoundedRectangle(cornerRadius: 16).stroke(Color.failRed.opacity(0.2), lineWidth: 1))
+        .overlay(RoundedRectangle(cornerRadius: 16).stroke(Color.failRed.opacity(0.18), lineWidth: 1))
     }
 }
-
-typealias AnswerButtonState = AnswerButton.AnswerButtonState

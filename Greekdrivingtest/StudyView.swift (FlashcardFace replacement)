@@ -1,0 +1,91 @@
+struct FlashcardFace: View {
+    @Environment(LanguageManager.self) private var lang
+    let question: Question
+    let isBack: Bool
+
+    var body: some View {
+        ZStack {
+            RoundedRectangle(cornerRadius: 20)
+                .fill(.ultraThinMaterial)
+                .overlay(
+                    RoundedRectangle(cornerRadius: 20)
+                        .stroke(categoryColor(question.category).opacity(0.3), lineWidth: 1)
+                )
+
+            ScrollView(.vertical, showsIndicators: false) {
+                VStack(spacing: 8) {
+                    if !isBack {
+                        // Front
+                        switch question.visual {
+                        case .none: EmptyView()
+                        default:
+                            QuestionVisualView(visual: question.visual, size: 60)
+                                .padding(.bottom, 4)
+                        }
+
+                        Text(question.text(greek: lang.language.isGreek))
+                            .font(.body.weight(.semibold))
+                            .multilineTextAlignment(.center)
+                            .padding(.horizontal, 16)
+
+                        Spacer(minLength: 8)
+
+                        Text(lang.t("Πάτα για την απάντηση", "Tap for answer"))
+                            .font(.caption)
+                            .foregroundColor(.secondary)
+                            .padding(.bottom, 8)
+                    } else {
+                        // Back
+                        Text(question.text(greek: lang.language.isGreek))
+                            .font(.subheadline.weight(.medium))
+                            .multilineTextAlignment(.center)
+                            .padding(.horizontal, 16)
+
+                        Divider().padding(.horizontal, 16)
+
+                        ForEach(question.options(greek: lang.language.isGreek).indices, id: \.self) { i in
+                            HStack(spacing: 8) {
+                                ZStack {
+                                    Circle()
+                                        .fill(i == question.correctIndex
+                                              ? Color.passGreen
+                                              : Color(.systemGray5))
+                                        .frame(width: 24, height: 24)
+                                    Text(["Α","Β","Γ","Δ"][i])
+                                        .font(.caption.bold())
+                                        .foregroundColor(i == question.correctIndex ? .white : .secondary)
+                                }
+                                Text(question.options(greek: lang.language.isGreek)[i])
+                                    .font(.subheadline)
+                                    .foregroundColor(i == question.correctIndex ? .passGreen : .primary)
+                                    .fontWeight(i == question.correctIndex ? .bold : .regular)
+                                Spacer()
+                            }
+                            .padding(.horizontal, 16)
+                        }
+
+                        Spacer(minLength: 8)
+
+                        let expl = question.explanation(greek: lang.language.isGreek)
+                        if !expl.isEmpty {
+                            HStack(spacing: 4) {
+                                Image(systemName: "info.circle.fill")
+                                    .foregroundColor(.catBlue)
+                                    .font(.caption)
+                                Text(expl)
+                                    .font(.caption)
+                                    .foregroundColor(.secondary)
+                            }
+                            .padding(.horizontal, 12)
+                            .padding(.vertical, 6)
+                            .background(Color.catBlue.opacity(0.07))
+                            .cornerRadius(8)
+                        }
+                    }
+                }
+                .padding(.vertical, 12)
+            }
+            .padding(.vertical, 4)   // allow scroll indicator room
+        }
+    }
+}

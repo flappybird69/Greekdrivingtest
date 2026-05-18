@@ -1,0 +1,316 @@
+
+// MARK: - FlashcardCard (quiz style – tap an option or "I don't remember")
+struct FlashcardCard: View {
+    @Environment(LanguageManager.self) private var lang
+    let question: Question
+    let onAnswer: (Int) -> Void
+    let onDontRemember: () -> Void
+    let selectedAnswer: Int?        // nil if not answered via option
+    let revealedCorrect: Bool       // true if "don't remember" was tapped
+    let isAnswered: Bool
+
+    var body: some View {
+        ZStack {
+            RoundedRectangle(cornerRadius: 20)
+                .fill(.ultraThinMaterial)
+                .overlay(
+                    RoundedRectangle(cornerRadius: 20)
+                        .stroke(categoryColor(question.category).opacity(0.3), lineWidth: 1)
+                )
+
+            ScrollView(.vertical, showsIndicators: false) {
+                VStack(spacing: 12) {
+                    // Question visual
+                    switch question.visual {
+                    case .none: EmptyView()
+                    default:
+                        QuestionVisualView(visual: question.visual, size: 60)
+                    }
+
+                    // Question text
+                    Text(question.text(greek: lang.language.isGreek))
+                        .font(.body.weight(.semibold))
+                        .multilineTextAlignment(.center)
+                        .padding(.horizontal, 12)
+
+                    Divider().padding(.horizontal, 16)
+
+                    // Options
+                    ForEach(question.options(greek: lang.language.isGreek).indices, id: \.self) { i in
+                        Button {
+                            guard !isAnswered else { return }
+                            onAnswer(i)
+                        } label: {
+                            HStack(spacing: 10) {
+                                ZStack {
+                                    Circle()
+                                        .fill(buttonFillColor(for: i))
+                                        .frame(width: 28, height: 28)
+                                    Text(["Α","Β","Γ","Δ"][i])
+                                        .font(.caption.bold())
+                                        .foregroundColor(buttonForegroundColor(for: i))
+                                }
+                                Text(question.options(greek: lang.language.isGreek)[i])
+                                    .font(.subheadline)
+                                    .foregroundColor(buttonTextColor(for: i))
+                                    .multilineTextAlignment(.leading)
+                                Spacer()
+                            }
+                            .padding(.horizontal, 16)
+                            .padding(.vertical, 10)
+                            .background(buttonBackground(for: i))
+                            .clipShape(RoundedRectangle(cornerRadius: 10))
+                            .overlay(
+                                RoundedRectangle(cornerRadius: 10)
+                                    .stroke(buttonBorderColor(for: i), lineWidth: isAnswered && i == question.correctIndex ? 2 : 0)
+                            )
+                        }
+                        .disabled(isAnswered)
+                    }
+
+                    // "Don't remember" button (only visible before answering)
+                    if !isAnswered {
+                        Button {
+                            onDontRemember()
+                        } label: {
+                            HStack(spacing: 6) {
+                                Image(systemName: "eye.slash.fill")
+                                    .font(.caption)
+                                Text(lang.t("Δεν θυμάμαι", "I don't remember"))
+                                    .font(.subheadline.weight(.semibold))
+                            }
+                            .foregroundColor(.orange)
+                            .padding(.vertical, 10)
+                            .padding(.horizontal, 20)
+                            .overlay(
+                                RoundedRectangle(cornerRadius: 12)
+                                    .stroke(Color.orange, lineWidth: 1.5)
+                            )
+                        }
+                        .padding(.top, 4)
+                    }
+
+                    // Explanation (shown after answer)
+                    if isAnswered {
+                        let expl = question.explanation(greek: lang.language.isGreek)
+                        if !expl.isEmpty {
+                            HStack(spacing: 6) {
+                                Image(systemName: "info.circle.fill")
+                                    .foregroundColor(.catBlue)
+                                    .font(.caption)
+                                Text(expl)
+                                    .font(.caption)
+                                    .foregroundColor(.secondary)
+                            }
+                            .padding(.horizontal, 12)
+                            .padding(.vertical, 8)
+                            .background(Color.catBlue.opacity(0.07))
+                            .cornerRadius(8)
+                            .transition(.opacity.combined(with: .move(edge: .bottom)))
+                        }
+                    }
+                }
+                .padding(.vertical, 16)
+            }
+        }
+    }
+
+    // MARK: - Button style helpers
+    private func buttonFillColor(for i: Int) -> Color {
+        if !isAnswered { return Color(.systemGray5) }
+        if i == question.correctIndex { return .passGreen }
+        if i == selectedAnswer { return .failRed }
+        return Color(.systemGray5)
+    }
+
+    private func buttonForegroundColor(for i: Int) -> Color {
+        if !isAnswered { return .secondary }
+        if i == question.correctIndex || i == selectedAnswer { return .white }
+        return .secondary
+    }
+
+    private func buttonTextColor(for i: Int) -> Color {
+        if !isAnswered { return .primary }
+        if i == question.correctIndex { return .passGreen }
+        if i == selectedAnswer { return .failRed }
+        return .primary
+    }
+
+    private func buttonBackground(for i: Int) -> Color {
+        if !isAnswered { return Color.clear }
+        if i == question.correctIndex { return .passGreen.opacity(0.08) }
+        if i == selectedAnswer { return .failRed.opacity(0.08) }
+        return Color.clear
+    }
+
+    private func buttonBorderColor(for i: Int) -> Color {
+        if isAnswered && i == question.correctIndex { return .passGreen }
+        return .clear
+    }
+}
+
+// MARK: - FlashcardSessionView (quiz with Next / Finish and "I don't remember")
+struct FlashcardSessionView: View {
+    @Environment(LanguageManager.self) private var lang
+    @State private var session: FlashcardSession
+
+    let onReturn: () -> Void
+    let onStartWeak: ([Int]) -> Void
+
+    @State private var selectedAnswer: Int? = nil
+    @State private var revealedCorrect = false
+    @State private var isAnswered = false
+
+    init(session: FlashcardSession,
+         onReturn: @escaping () -> Void = {},
+         onStartWeak: @escaping ([Int]) -> Void = { _ in }) {
+        _session = State(initialValue: session)
+        self.onReturn = onReturn
+        self.onStartWeak = onStartWeak
+    }
+
+    private var allAnswered: Bool { session.currentIndex >= session.questions.count }
+
+    var body: some View {
+        VStack(spacing: 0) {
+            // Progress bar
+            HStack {
+                Text(lang.t("Πρόοδος", "Progress"))
+                    .font(.caption)
+                    .foregroundColor(.secondary)
+                Spacer()
+                Text("\(session.currentIndex + 1) / \(session.questions.count)")
+                    .font(.caption.bold())
+                    .foregroundColor(.greekBlue)
+            }
+            .padding(.horizontal, 16)
+            .padding(.top, 8)
+
+            ProgressView(value: Double(session.currentIndex + 1),
+                         total: Double(session.questions.count))
+                .tint(.greekBlue)
+                .padding(.horizontal, 16)
+                .padding(.bottom, 8)
+
+            if allAnswered {
+                sessionSummaryView
+            } else {
+                let question = session.questions[session.currentIndex]
+                FlashcardCard(
+                    question: question,
+                    onAnswer: { index in
+                        selectedAnswer = index
+                        revealedCorrect = false
+                        isAnswered = true
+                        if index == question.correctIndex {
+                            session.advanceWithResult(.correct)
+                        } else {
+                            session.advanceWithResult(.incorrect)
+                        }
+                    },
+                    onDontRemember: {
+                        revealedCorrect = true
+                        isAnswered = true
+                        session.advanceWithResult(.incorrect)
+                    },
+                    selectedAnswer: selectedAnswer,
+                    revealedCorrect: revealedCorrect,
+                    isAnswered: isAnswered
+                )
+                .padding(.horizontal, 16)
+                .padding(.vertical, 8)
+
+                // Next / Finish button (only when answered)
+                if isAnswered {
+                    Button {
+                        advanceToNext()
+                    } label: {
+                        HStack(spacing: 8) {
+                            Text(session.currentIndex >= session.questions.count
+                                 ? lang.t("Τέλος", "Finish")
+                                 : lang.t("Επόμενη", "Next"))
+                            Image(systemName: "arrow.right")
+                        }
+                        .font(.headline)
+                        .foregroundColor(.white)
+                        .frame(maxWidth: .infinity)
+                        .padding(.vertical, 14)
+                        .background(Color.greekBlue)
+                        .clipShape(RoundedRectangle(cornerRadius: 14))
+                        .padding(.horizontal, 16)
+                    }
+                    .transition(.move(edge: .bottom).combined(with: .opacity))
+                }
+            }
+        }
+        .animation(.spring(response: 0.3), value: isAnswered)
+        .onChange(of: session.currentIndex) { _, _ in
+            withAnimation {
+                selectedAnswer = nil
+                revealedCorrect = false
+                isAnswered = false
+            }
+        }
+    }
+
+    private func advanceToNext() {
+        // Already advanced via advanceWithResult – no further action needed.
+    }
+
+    @ViewBuilder
+    private var sessionSummaryView: some View {
+        VStack(spacing: 20) {
+            Spacer()
+            Image(systemName: session.correctCount >= session.questions.count / 2
+                  ? "star.fill" : "star")
+                .font(.system(size: 60))
+                .foregroundColor(.greekGold)
+            Text(lang.t("Η συνεδρία ολοκληρώθηκε!", "Session Complete!"))
+                .font(.title2.bold())
+            Text("\(session.correctCount) / \(session.questions.count)")
+                .font(.largeTitle.bold())
+                .foregroundColor(.greekBlue)
+            let pct = session.questions.isEmpty ? 0 : Double(session.correctCount) / Double(session.questions.count) * 100
+            Text(String(format: "%.0f%%", pct))
+                .font(.title3)
+                .foregroundColor(.secondary)
+            if session.bestStreak >= 3 {
+                HStack(spacing: 4) {
+                    Text("🔥")
+                    Text(lang.t("Καλύτερο σερί:", "Best streak:") + " \(session.bestStreak)")
+                        .font(.subheadline.bold())
+                }
+            }
+            let weakIds = session.weakQuestionIds
+            if !weakIds.isEmpty {
+                VStack(spacing: 8) {
+                    Text(lang.t("Ερωτήσεις που χρειάζονται εξάσκηση:", "Questions needing practice:"))
+                        .font(.caption)
+                        .foregroundColor(.secondary)
+                    Button {
+                        onStartWeak(Array(weakIds))
+                    } label: {
+                        Text(lang.t("Εξάσκηση αδύναμων καρτών", "Practice Weak Cards"))
+                            .font(.subheadline.bold())
+                            .padding(.horizontal, 20)
+                            .padding(.vertical, 10)
+                            .background(Capsule().fill(Color.orange))
+                            .foregroundColor(.white)
+                    }
+                }
+            }
+            HStack(spacing: 20) {
+                Button(lang.t("Επανάληψη", "Retry")) {
+                    session.reset()
+                }
+                .buttonStyle(.bordered)
+                Button(lang.t("Επιστροφή", "Return")) {
+                    onReturn()
+                }
+                .buttonStyle(.borderedProminent)
+            }
+            Spacer()
+        }
+        .padding()
+    }
+}

@@ -21,7 +21,11 @@ struct CardModifier: ViewModifier {
         content
             .background(.regularMaterial)
             .clipShape(RoundedRectangle(cornerRadius: cornerRadius))
-            .shadow(color: .black.opacity(0.07), radius: 10, x: 0, y: 4)
+            .shadow(color: .black.opacity(0.06), radius: 12, x: 0, y: 4)
+            .overlay(
+                RoundedRectangle(cornerRadius: cornerRadius)
+                    .stroke(Color.primary.opacity(0.05), lineWidth: 0.5)
+            )
     }
 }
 
@@ -45,10 +49,22 @@ func categoryColor(_ category: QuestionCategory) -> Color {
 // MARK: - Gradient Background
 struct AppBackground: View {
     var body: some View {
-        LinearGradient(
-            colors: [Color.greekBlue.opacity(0.12), Color.clear],
-            startPoint: .top, endPoint: .center
-        )
+        ZStack {
+            LinearGradient(
+                colors: [Color.greekBlue.opacity(0.08), Color.clear],
+                startPoint: .topLeading, endPoint: .center
+            )
+            Circle()
+                .fill(Color.greekBlue.opacity(0.14))
+                .frame(width: 380, height: 380)
+                .blur(radius: 80)
+                .offset(x: 130, y: -160)
+            Circle()
+                .fill(Color.catBlue.opacity(0.07))
+                .frame(width: 260, height: 260)
+                .blur(radius: 60)
+                .offset(x: -110, y: 200)
+        }
         .ignoresSafeArea()
     }
 }

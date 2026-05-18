@@ -33,20 +33,38 @@ struct HomeView: View {
                 colors: [.greekBlue, .greekDark],
                 startPoint: .topLeading, endPoint: .bottomTrailing
             )
-            .clipShape(RoundedRectangle(cornerRadius: 24))
 
-            VStack(alignment: .leading, spacing: 12) {
-                Text("🇬🇷")
-                    .font(.system(size: 46))
-                Text(lang.t("Θεωρητική Εξέταση", "Theory Exam"))
-                    .font(.system(size: 26, weight: .bold))
-                    .foregroundColor(.white)
+            // Decorative glowing circles
+            Circle()
+                .fill(Color.white.opacity(0.07))
+                .frame(width: 200, height: 200)
+                .offset(x: 180, y: -20)
+            Circle()
+                .fill(Color.white.opacity(0.04))
+                .frame(width: 120, height: 120)
+                .offset(x: 250, y: 40)
+
+            VStack(alignment: .leading, spacing: 10) {
+                HStack(spacing: 10) {
+                    Text("🇬🇷")
+                        .font(.system(size: 38))
+                    VStack(alignment: .leading, spacing: 2) {
+                        Text(lang.t("Θεωρητική", "Theory"))
+                            .font(.system(size: 12, weight: .semibold))
+                            .foregroundColor(.white.opacity(0.65))
+                            .textCase(.uppercase)
+                            .tracking(1.2)
+                        Text(lang.t("Εξέταση", "Exam"))
+                            .font(.system(size: 28, weight: .bold, design: .rounded))
+                            .foregroundColor(.white)
+                    }
+                }
                 Text(lang.t(
                     "30 ερωτήσεις · 45 λεπτά · Μέγιστο 3 λάθη",
                     "30 questions · 45 minutes · Max 3 errors"
                 ))
                 .font(.subheadline)
-                .foregroundColor(.white.opacity(0.8))
+                .foregroundColor(.white.opacity(0.72))
 
                 Button { selectedTab = 2 } label: {
                     HStack(spacing: 8) {
@@ -55,17 +73,18 @@ struct HomeView: View {
                             .fontWeight(.bold)
                     }
                     .foregroundColor(.greekBlue)
-                    .padding(.horizontal, 22)
-                    .padding(.vertical, 12)
+                    .padding(.horizontal, 20)
+                    .padding(.vertical, 11)
                     .background(Color.white)
                     .clipShape(Capsule())
                 }
-                .padding(.top, 4)
+                .padding(.top, 6)
             }
             .padding(24)
         }
-        .frame(minHeight: 230)
-        .shadow(color: .greekBlue.opacity(0.35), radius: 16, x: 0, y: 8)
+        .frame(minHeight: 220)
+        .clipShape(RoundedRectangle(cornerRadius: 28))
+        .shadow(color: .greekBlue.opacity(0.45), radius: 24, x: 0, y: 12)
     }
 
     // MARK: - Stats
@@ -145,12 +164,17 @@ struct StatPill: View {
     let color: Color
 
     var body: some View {
-        VStack(spacing: 6) {
-            Image(systemName: icon)
-                .font(.title3)
-                .foregroundColor(color)
+        VStack(spacing: 8) {
+            ZStack {
+                RoundedRectangle(cornerRadius: 10)
+                    .fill(color.opacity(0.14))
+                    .frame(width: 36, height: 36)
+                Image(systemName: icon)
+                    .font(.system(size: 15, weight: .semibold))
+                    .foregroundColor(color)
+            }
             Text(value)
-                .font(.title2.bold())
+                .font(.title3.bold())
             Text(label)
                 .font(.caption)
                 .foregroundColor(.secondary)
@@ -168,7 +192,7 @@ struct CategoryCard: View {
     var body: some View {
         VStack(alignment: .leading, spacing: 10) {
             ZStack {
-                Circle()
+                RoundedRectangle(cornerRadius: 12)
                     .fill(categoryColor(category).opacity(0.15))
                     .frame(width: 44, height: 44)
                 Image(systemName: category.icon)
@@ -185,10 +209,21 @@ struct CategoryCard: View {
         }
         .padding(16)
         .frame(maxWidth: .infinity, alignment: .leading)
-        .cardStyle()
+        .background(
+            ZStack {
+                Color(.systemBackground)
+                LinearGradient(
+                    colors: [categoryColor(category).opacity(0.07), .clear],
+                    startPoint: .topLeading,
+                    endPoint: .bottomTrailing
+                )
+            }
+        )
+        .clipShape(RoundedRectangle(cornerRadius: 18))
+        .shadow(color: categoryColor(category).opacity(0.18), radius: 12, x: 0, y: 4)
         .overlay(
-            RoundedRectangle(cornerRadius: 16)
-                .stroke(categoryColor(category).opacity(0.25), lineWidth: 1)
+            RoundedRectangle(cornerRadius: 18)
+                .stroke(categoryColor(category).opacity(0.2), lineWidth: 1)
         )
     }
 }
@@ -226,5 +261,45 @@ struct RecentResultRow: View {
         }
         .padding(14)
         .cardStyle()
+    }
+}
+
+// MARK: - StudyCategoryView (navigated from HomeView)
+struct StudyCategoryView: View {
+    @Environment(LanguageManager.self) private var lang
+    @Query private var bookmarks: [BookmarkedQuestion]
+    @Environment(\.modelContext) private var modelContext
+
+    let category: QuestionCategory
+
+    var questions: [Question] { QuestionBank.all.filter { $0.category == category } }
+
+    var body: some View {
+        ZStack {
+            AppBackground()
+            List {
+                ForEach(questions) { q in
+                    StudyQuestionRow(question: q, isBookmarked: isBookmarked(q.id)) {
+                        toggleBookmark(q.id)
+                    }
+                    .listRowSeparator(.hidden)
+                    .listRowBackground(Color.clear)
+                    .listRowInsets(EdgeInsets(top: 4, leading: 16, bottom: 4, trailing: 16))
+                }
+            }
+            .listStyle(.plain)
+            .scrollContentBackground(.hidden)
+        }
+        .navigationTitle(category.name(greek: lang.language.isGreek))
+        .navigationBarTitleDisplayMode(.large)
+    }
+
+    private func isBookmarked(_ id: Int) -> Bool { bookmarks.contains { $0.questionId == id } }
+    private func toggleBookmark(_ id: Int) {
+        if let existing = bookmarks.first(where: { $0.questionId == id }) {
+            modelContext.delete(existing)
+        } else {
+            modelContext.insert(BookmarkedQuestion(questionId: id))
+        }
     }
 }

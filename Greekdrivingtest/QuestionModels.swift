@@ -61,6 +61,7 @@ enum QuestionVisual {
     case none
     case trafficSign(TrafficSignType)
     case scenario(sfSymbol: String, colorName: String)
+    case image(named: String)
 }
 
 // MARK: - Question
@@ -109,6 +110,17 @@ final class TestResult {
 
 @Model
 final class BookmarkedQuestion {
+    var questionId: Int
+    var dateAdded: Date
+
+    init(questionId: Int) {
+        self.questionId = questionId
+        self.dateAdded = Date()
+    }
+}
+
+@Model
+final class DifficultQuestion {
     var questionId: Int
     var dateAdded: Date
 
