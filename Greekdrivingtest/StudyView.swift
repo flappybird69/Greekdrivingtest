@@ -131,7 +131,6 @@ struct StudyQuestionRow: View {
 
 // MARK: - Flashcard Session (Observable)
 @Observable
-@Observable
 class FlashcardSession {
     let questions: [Question]
     let onFinish: (Int, Int, [Int]) -> Void
@@ -375,6 +374,7 @@ struct FlashcardSessionView: View {
     @State private var revealedCorrect = false
     @State private var isAnswered = false
     @State private var pendingResult: FlashcardSession.AnswerResult? = nil
+    @State private var sessionVersion = 0
 
     init(session: FlashcardSession,
          onReturn: @escaping () -> Void = {},
@@ -493,6 +493,7 @@ struct FlashcardSessionView: View {
             selectedAnswer = nil
             revealedCorrect = false
             isAnswered = false
+            sessionVersion += 1
         }
     }
 
