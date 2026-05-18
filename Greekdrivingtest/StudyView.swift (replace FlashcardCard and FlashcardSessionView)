@@ -24,7 +24,7 @@ struct FlashcardCard: View {
                     switch question.visual {
                     case .none: EmptyView()
                     default:
-                        QuestionVisualView(visual: question.visual, size: 60)
+                        QuestionVisualView(visual: question.visual, size: 130, borderless: true)
                     }
 
                     // Question text

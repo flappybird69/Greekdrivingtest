@@ -17,14 +17,16 @@ extension Color {
 // MARK: - Card Modifier
 struct CardModifier: ViewModifier {
     var cornerRadius: CGFloat = 16
+    private let shadowColor = Color.black.opacity(0.06)
+    private let strokeColor = Color.primary.opacity(0.05)
     func body(content: Content) -> some View {
         content
             .background(.regularMaterial)
             .clipShape(RoundedRectangle(cornerRadius: cornerRadius))
-            .shadow(color: .black.opacity(0.06), radius: 12, x: 0, y: 4)
+            .shadow(color: shadowColor, radius: 12, x: 0, y: 4)
             .overlay(
                 RoundedRectangle(cornerRadius: cornerRadius)
-                    .stroke(Color.primary.opacity(0.05), lineWidth: 0.5)
+                    .stroke(strokeColor, lineWidth: 0.5)
             )
     }
 }
@@ -43,6 +45,56 @@ func categoryColor(_ category: QuestionCategory) -> Color {
     case .behavior:  return .catPurple
     case .vehicle:   return .catGreen
     case .firstAid:  return .catRed
+    }
+}
+
+// MARK: - Confetti
+
+struct ConfettiView: View {
+    private let colors: [Color] = [.passGreen, .catBlue, .catOrange, .catPurple, .greekGold, .catRed, .white]
+    @State private var animate = false
+
+    var body: some View {
+        ZStack {
+            ForEach(0..<55, id: \.self) { i in
+                ConfettiParticle(
+                    color: colors[i % colors.count],
+                    xStart: CGFloat(i * 41 % 380) - 190,
+                    xDrift: CGFloat(i * 23 % 140) - 70,
+                    size: CGFloat(6 + i % 7),
+                    delay: Double(i % 18) * 0.045,
+                    animate: animate
+                )
+            }
+        }
+        .ignoresSafeArea()
+        .allowsHitTesting(false)
+        .onAppear {
+            DispatchQueue.main.asyncAfter(deadline: .now() + 0.15) { animate = true }
+        }
+    }
+}
+
+private struct ConfettiParticle: View {
+    let color: Color
+    let xStart: CGFloat
+    let xDrift: CGFloat
+    let size: CGFloat
+    let delay: Double
+    let animate: Bool
+
+    var body: some View {
+        RoundedRectangle(cornerRadius: size * 0.25)
+            .fill(color)
+            .frame(width: size, height: size * 1.6)
+            .offset(x: animate ? xStart + xDrift : xStart,
+                    y: animate ? -520 : 60)
+            .opacity(animate ? 0 : 0.92)
+            .rotationEffect(.degrees(animate ? Double(Int(xStart) * 3 % 360) : 0))
+            .animation(
+                .easeOut(duration: 1.1 + delay * 0.4).delay(delay),
+                value: animate
+            )
     }
 }
 

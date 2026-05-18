@@ -1,6 +1,5 @@
 import SwiftUI
 import SwiftData
-import Combine
 
 // MARK: - Filter Pill
 struct FilterPill: View {
@@ -66,10 +65,10 @@ struct StudyQuestionRow: View {
                     default:
                         HStack {
                             Spacer()
-                            QuestionVisualView(visual: question.visual, size: 100)
+                            QuestionVisualView(visual: question.visual, size: 200, borderless: true)
                             Spacer()
                         }
-                        .padding(.top, 4)
+                        .padding(.top, 8)
                     }
 
                     ForEach(question.options(greek: lang.language.isGreek).indices, id: \.self) { i in
@@ -131,6 +130,7 @@ struct StudyQuestionRow: View {
 }
 
 // MARK: - Flashcard Session (Observable)
+@Observable
 @Observable
 class FlashcardSession {
     let questions: [Question]
@@ -242,7 +242,7 @@ struct FlashcardCard: View {
                     switch question.visual {
                     case .none: EmptyView()
                     default:
-                        QuestionVisualView(visual: question.visual, size: 80)
+                        QuestionVisualView(visual: question.visual, size: 130, borderless: true)
                     }
 
                     Text(question.text(greek: lang.language.isGreek))
@@ -374,6 +374,7 @@ struct FlashcardSessionView: View {
     @State private var selectedAnswer: Int? = nil
     @State private var revealedCorrect = false
     @State private var isAnswered = false
+    @State private var pendingResult: FlashcardSession.AnswerResult? = nil
 
     init(session: FlashcardSession,
          onReturn: @escaping () -> Void = {},
@@ -430,17 +431,17 @@ struct FlashcardSessionView: View {
                         revealedCorrect = false
                         isAnswered = true
                         if index == question.correctIndex {
-                            session.advanceWithResult(.correct)
+                            pendingResult = .correct
                             UIImpactFeedbackGenerator(style: .light).impactOccurred()
                         } else {
-                            session.advanceWithResult(.incorrect)
+                            pendingResult = .incorrect
                             UINotificationFeedbackGenerator().notificationOccurred(.error)
                         }
                     },
                     onDontRemember: {
                         revealedCorrect = true
                         isAnswered = true
-                        session.advanceWithResult(.incorrect)
+                        pendingResult = .incorrect
                         UIImpactFeedbackGenerator(style: .medium).impactOccurred()
                     },
                     selectedAnswer: selectedAnswer,
@@ -481,16 +482,19 @@ struct FlashcardSessionView: View {
             }
         }
         .animation(.spring(response: 0.35), value: isAnswered)
-        .onChange(of: session.currentIndex) { _, _ in
-            withAnimation(.spring(response: 0.3)) {
-                selectedAnswer = nil
-                revealedCorrect = false
-                isAnswered = false
-            }
-        }
     }
 
-    private func advanceToNext() {}
+    private func advanceToNext() {
+        if let result = pendingResult {
+            session.advanceWithResult(result)
+            pendingResult = nil
+        }
+        withAnimation(.spring(response: 0.3)) {
+            selectedAnswer = nil
+            revealedCorrect = false
+            isAnswered = false
+        }
+    }
 
     @ViewBuilder
     private var sessionSummaryView: some View {
@@ -564,6 +568,8 @@ struct IntensivePracticeView: View {
     @State private var activeSession: FlashcardSession? = nil
     @State private var showReset = false
     @State private var showSpeedRound = false
+    @State private var cachedPool: [Question] = []
+    @State private var categoryCounts: [QuestionCategory: Int] = [:]
 
     enum CountOption: Int, CaseIterable {
         case ten = 10, twenty = 20, thirty = 30, all = 0
@@ -584,53 +590,79 @@ struct IntensivePracticeView: View {
 
     var difficultIds: Set<Int> { Set(difficultQuestions.map(\.questionId)) }
 
-    var pool: [Question] {
+    private func updatePool() {
+        let wIds = wrongIds
+        let dIds = difficultIds
         var base: [Question]
         switch sourceMode {
         case .all:
             base = QuestionBank.all.filter { selectedCategories.contains($0.category) }
         case .wrongOnly:
-            base = QuestionBank.all.filter { wrongIds.contains($0.id) && selectedCategories.contains($0.category) }
+            base = QuestionBank.all.filter { wIds.contains($0.id) && selectedCategories.contains($0.category) }
         case .difficultOnly:
-            base = QuestionBank.all.filter { difficultIds.contains($0.id) && selectedCategories.contains($0.category) }
+            base = QuestionBank.all.filter { dIds.contains($0.id) && selectedCategories.contains($0.category) }
         }
         base = base.shuffled()
         if questionCount != .all && questionCount.rawValue < base.count {
             base = Array(base.prefix(questionCount.rawValue))
         }
-        return base
+        cachedPool = base
+
+        let filterIds: Set<Int>?
+        switch sourceMode {
+        case .all: filterIds = nil
+        case .wrongOnly: filterIds = wIds
+        case .difficultOnly: filterIds = dIds
+        }
+        var counts: [QuestionCategory: Int] = [:]
+        for q in QuestionBank.all {
+            if let ids = filterIds {
+                if ids.contains(q.id) { counts[q.category, default: 0] += 1 }
+            } else {
+                counts[q.category, default: 0] += 1
+            }
+        }
+        categoryCounts = counts
     }
 
     var body: some View {
-        if showSpeedRound {
-            SpeedRoundView(
-                questions: pool.isEmpty ? Array(QuestionBank.all.shuffled().prefix(30)) : pool,
-                onReturn: { showSpeedRound = false }
-            )
-        } else if let session = activeSession {
-            FlashcardSessionView(
-                session: session,
-                onReturn: { activeSession = nil },
-                onStartWeak: { weakIds in
-                    let weak = QuestionBank.all.filter { weakIds.contains($0.id) }
-                    if !weak.isEmpty {
-                        activeSession = FlashcardSession(questions: weak, onFinish: { _, _, _ in activeSession = nil })
+        Group {
+            if showSpeedRound {
+                SpeedRoundView(
+                    questions: cachedPool.isEmpty ? Array(QuestionBank.all.shuffled().prefix(30)) : cachedPool,
+                    onReturn: { showSpeedRound = false }
+                )
+            } else if let session = activeSession {
+                FlashcardSessionView(
+                    session: session,
+                    onReturn: { activeSession = nil },
+                    onStartWeak: { weakIds in
+                        let weak = QuestionBank.all.filter { weakIds.contains($0.id) }
+                        if !weak.isEmpty {
+                            activeSession = FlashcardSession(questions: weak, onFinish: { _, _, _ in activeSession = nil })
+                        }
                     }
+                )
+            } else {
+                ScrollView {
+                    VStack(spacing: 20) {
+                        sourcePicker
+                        if sourceMode == .wrongOnly { wrongBankCard }
+                        categorySection
+                        countSection
+                        startButton
+                        speedChallengeCard
+                    }
+                    .padding(16)
                 }
-            )
-        } else {
-            ScrollView {
-                VStack(spacing: 20) {
-                    sourcePicker
-                    if sourceMode == .wrongOnly { wrongBankCard }
-                    categorySection
-                    countSection
-                    startButton
-                    speedChallengeCard
-                }
-                .padding(16)
             }
         }
+        .onAppear { updatePool() }
+        .onChange(of: sourceMode) { _, _ in updatePool() }
+        .onChange(of: selectedCategories) { _, _ in updatePool() }
+        .onChange(of: questionCount) { _, _ in updatePool() }
+        .onChange(of: results) { _, _ in updatePool() }
+        .onChange(of: difficultQuestions) { _, _ in updatePool() }
     }
 
     // MARK: Source Picker
@@ -778,12 +810,7 @@ struct IntensivePracticeView: View {
     private func categoryToggle(_ cat: QuestionCategory) -> some View {
         let selected = selectedCategories.contains(cat)
         let color = categoryColor(cat)
-        let count: Int
-        switch sourceMode {
-        case .all:           count = QuestionBank.all.filter { $0.category == cat }.count
-        case .wrongOnly:     count = QuestionBank.all.filter { $0.category == cat && wrongIds.contains($0.id) }.count
-        case .difficultOnly: count = QuestionBank.all.filter { $0.category == cat && difficultIds.contains($0.id) }.count
-        }
+        let count = categoryCounts[cat] ?? 0
 
         return Button {
             if selected { selectedCategories.remove(cat) }
@@ -852,13 +879,13 @@ struct IntensivePracticeView: View {
 
     // MARK: Start Button
     private var startButton: some View {
-        let count = pool.count
+        let count = cachedPool.count
         let canStart = !selectedCategories.isEmpty && count > 0
 
         return VStack(spacing: 6) {
             Button {
                 guard canStart else { return }
-                activeSession = FlashcardSession(questions: pool, onFinish: { _, _, _ in })
+                activeSession = FlashcardSession(questions: cachedPool, onFinish: { _, _, _ in })
             } label: {
                 HStack(spacing: 10) {
                     Image(systemName: "bolt.fill")
@@ -944,8 +971,6 @@ struct SpeedRoundView: View {
     @State private var flashRed = false
     @State private var isNewBest = false
 
-    private let ticker = Timer.publish(every: 1, on: .main, in: .common).autoconnect()
-
     private var currentQuestion: Question? {
         guard currentIndex < questions.count else { return nil }
         return questions[currentIndex]
@@ -985,16 +1010,17 @@ struct SpeedRoundView: View {
                     .transition(.opacity)
             }
         }
-        .onReceive(ticker) { _ in
+        .task(id: isFinished) {
             guard !isFinished else { return }
-            if timeLeft > 0 {
+            while !isFinished && timeLeft > 0 {
+                try? await Task.sleep(nanoseconds: 1_000_000_000)
+                guard !isFinished else { return }
                 timeLeft -= 1
                 if timeLeft == 10 {
                     UINotificationFeedbackGenerator().notificationOccurred(.warning)
                 }
-            } else {
-                finish()
             }
+            if !isFinished { finish() }
         }
     }
 
@@ -1235,6 +1261,21 @@ struct StudyView: View {
     @State private var searchText = ""
     @State private var studyMode: StudyMode = .browse
     @State private var flashcardSession: FlashcardSession? = nil
+    @State private var filteredQuestions: [Question] = QuestionBank.all
+
+    private func updateFiltered() {
+        var q = QuestionBank.all
+        if let cat = selectedCategory { q = q.filter { $0.category == cat } }
+        if showBookmarksOnly {
+            let ids = Set(bookmarks.map(\.questionId))
+            q = q.filter { ids.contains($0.id) }
+        }
+        if !searchText.isEmpty {
+            let isGreek = lang.language.isGreek
+            q = q.filter { $0.text(greek: isGreek).localizedCaseInsensitiveContains(searchText) }
+        }
+        filteredQuestions = q
+    }
 
     enum StudyMode: String, CaseIterable {
         case browse, flashcards, intensive
@@ -1252,20 +1293,6 @@ struct StudyView: View {
             case .intensive: return "Intensive"
             }
         }
-    }
-
-    var filtered: [Question] {
-        var q = QuestionBank.all
-        if let cat = selectedCategory { q = q.filter { $0.category == cat } }
-        if showBookmarksOnly {
-            let ids = Set(bookmarks.map(\.questionId))
-            q = q.filter { ids.contains($0.id) }
-        }
-        if !searchText.isEmpty {
-            q = q.filter { $0.text(greek: lang.language.isGreek)
-                .localizedCaseInsensitiveContains(searchText) }
-        }
-        return q
     }
 
     var body: some View {
@@ -1312,34 +1339,36 @@ struct StudyView: View {
             }
             .searchable(text: $searchText, prompt: lang.t("Αναζήτηση...", "Search..."))
         }
-        .onChange(of: selectedCategory) { _, _ in resetFlashcardSessionIfNeeded() }
-        .onChange(of: showBookmarksOnly) { _, _ in resetFlashcardSessionIfNeeded() }
-        .onChange(of: searchText) { _, _ in resetFlashcardSessionIfNeeded() }
+        .onAppear { updateFiltered() }
+        .onChange(of: selectedCategory) { _, _ in updateFiltered(); resetFlashcardSessionIfNeeded() }
+        .onChange(of: showBookmarksOnly) { _, _ in updateFiltered(); resetFlashcardSessionIfNeeded() }
+        .onChange(of: searchText) { _, _ in updateFiltered(); resetFlashcardSessionIfNeeded() }
+        .onChange(of: bookmarks) { _, _ in updateFiltered() }
+        .onChange(of: lang.language) { _, _ in updateFiltered() }
     }
 
     @ViewBuilder
     private var browseContent: some View {
-        if filtered.isEmpty {
+        if filteredQuestions.isEmpty {
             emptyState
         } else {
-            List {
-                ForEach(filtered) { q in
-                    StudyQuestionRow(question: q, isBookmarked: isBookmarked(q.id)) {
-                        toggleBookmark(q.id)
+            ScrollView {
+                LazyVStack(spacing: 8) {
+                    ForEach(filteredQuestions) { q in
+                        StudyQuestionRow(question: q, isBookmarked: isBookmarked(q.id)) {
+                            toggleBookmark(q.id)
+                        }
+                        .padding(.horizontal, 16)
                     }
-                    .listRowSeparator(.hidden)
-                    .listRowBackground(Color.clear)
-                    .listRowInsets(EdgeInsets(top: 4, leading: 16, bottom: 4, trailing: 16))
                 }
+                .padding(.vertical, 4)
             }
-            .listStyle(.plain)
-            .scrollContentBackground(.hidden)
         }
     }
 
     @ViewBuilder
     private var flashcardContent: some View {
-        if filtered.isEmpty {
+        if filteredQuestions.isEmpty {
             emptyState
         } else if let session = flashcardSession {
             FlashcardSessionView(
@@ -1365,7 +1394,7 @@ struct StudyView: View {
                     .font(.headline)
                     .foregroundColor(.secondary)
                 Button {
-                    startFlashcardSession(questions: filtered)
+                    startFlashcardSession(questions: filteredQuestions)
                 } label: {
                     Label(lang.t("Ξεκινήστε Flashcards", "Start Flashcards"), systemImage: "play.fill")
                         .font(.title3.bold())

@@ -473,13 +473,22 @@ struct TrafficSignView: View {
 struct QuestionVisualView: View {
     let visual: QuestionVisual
     var size: CGFloat = 130
+    var borderless: Bool = false
 
-    /// Returns the SF Symbol name if available, otherwise a fallback.
     private static func safeSymbol(_ symbol: String) -> String {
         UIImage(systemName: symbol) != nil ? symbol : "questionmark.circle.fill"
     }
 
     var body: some View {
+        if borderless {
+            borderlessBody
+        } else {
+            borderedBody
+        }
+    }
+
+    @ViewBuilder
+    private var borderedBody: some View {
         switch visual {
         case .none:
             EmptyView()
@@ -489,6 +498,35 @@ struct QuestionVisualView: View {
             scenarioView(symbol: Self.safeSymbol(symbol), colorName: colorName)
         case .image(let named):
             imageView(named: named)
+        }
+    }
+
+    @ViewBuilder
+    private var borderlessBody: some View {
+        switch visual {
+        case .none:
+            EmptyView()
+        case .trafficSign(let type):
+            TrafficSignView(signType: type, size: size)
+        case .scenario(let symbol, let colorName):
+            Image(systemName: Self.safeSymbol(symbol))
+                .font(.system(size: size * 0.55))
+                .foregroundColor(scenarioColor(colorName))
+                .frame(width: size, height: size)
+        case .image(let named):
+            Group {
+                if let uiImage = UIImage(named: named) {
+                    Image(uiImage: uiImage)
+                        .resizable()
+                        .scaledToFit()
+                        .clipShape(RoundedRectangle(cornerRadius: 10))
+                } else {
+                    Image(systemName: "photo")
+                        .font(.system(size: size * 0.35))
+                        .foregroundColor(Color(.systemGray3))
+                }
+            }
+            .frame(width: size, height: size)
         }
     }
 

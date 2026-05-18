@@ -1,7 +1,5 @@
 import SwiftUI
 import SwiftData
-import Combine
-
 private enum TestPhase { case ready, inProgress, results }
 
 // MARK: - TestView
@@ -19,8 +17,7 @@ struct TestView: View {
     @State private var timeRemaining = 45 * 60
     @State private var timerActive = false
     @State private var showingQuitAlert = false
-
-    private let timer = Timer.publish(every: 1, on: .main, in: .common).autoconnect()
+    @State private var showConfetti = false
 
     var currentQuestion: Question? {
         guard currentIndex < questions.count else { return nil }
@@ -45,15 +42,17 @@ struct TestView: View {
             }
         }
         .toolbar(phase == .ready ? .visible : .hidden, for: .tabBar)
-        .onReceive(timer) { _ in
-            guard timerActive, timeRemaining > 0 else {
-                if timerActive && timeRemaining == 0 { finishExam() }
-                return
+        .task(id: timerActive) {
+            guard timerActive else { return }
+            while timeRemaining > 0 {
+                try? await Task.sleep(nanoseconds: 1_000_000_000)
+                guard timerActive else { return }
+                timeRemaining -= 1
+                if timeRemaining == 10 {
+                    UINotificationFeedbackGenerator().notificationOccurred(.warning)
+                }
             }
-            timeRemaining -= 1
-            if timeRemaining == 10 {
-                UINotificationFeedbackGenerator().notificationOccurred(.warning)
-            }
+            if timerActive { finishExam() }
         }
         .alert(lang.t("Διακοπή Εξέτασης;", "Quit Exam?"), isPresented: $showingQuitAlert) {
             Button(lang.t("Συνέχεια", "Continue"), role: .cancel) {}
@@ -65,6 +64,12 @@ struct TestView: View {
             Text(lang.t("Η πρόοδός σου θα χαθεί.", "Your progress will be lost."))
         }
         .animation(.easeInOut(duration: 0.35), value: phase)
+        .onChange(of: phase) { _, newPhase in
+            if newPhase == .results && passed {
+                showConfetti = true
+                DispatchQueue.main.asyncAfter(deadline: .now() + 2.2) { showConfetti = false }
+            }
+        }
     }
 
     // MARK: - Ready Screen
@@ -316,7 +321,7 @@ struct TestView: View {
             default:
                 HStack {
                     Spacer()
-                    QuestionVisualView(visual: q.visual, size: 155)
+                    QuestionVisualView(visual: q.visual, size: 185, borderless: true)
                     Spacer()
                 }
                 .padding(.vertical, 4)
@@ -408,10 +413,18 @@ struct TestView: View {
 
     // MARK: - Results Screen
 
+    private var shareText: String {
+        let emoji = passed ? "✅" : "❌"
+        let result = passed ? lang.t("ΕΠΙΤΥΧΙΑ", "PASSED") : lang.t("ΑΠΟΤΥΧΙΑ", "FAILED")
+        return "\(emoji) \(result) \(score)/30 \(lang.t("στη Θεωρητική Εξέταση ΚΟΚ! 🇬🇷", "on the Greek KOK Theory Exam! 🇬🇷"))"
+    }
+
     private var resultsView: some View {
         ZStack {
             (passed ? Color.passGreen.opacity(0.03) : Color(.systemGroupedBackground))
                 .ignoresSafeArea()
+
+            if showConfetti { ConfettiView() }
 
             VStack(spacing: 0) {
                 // Nav bar
@@ -526,6 +539,17 @@ struct TestView: View {
                                 .font(.headline).foregroundStyle(Color.greekBlue)
                                 .frame(maxWidth: .infinity).padding(.vertical, 16)
                                 .background(Color.greekBlue.opacity(0.1))
+                                .clipShape(RoundedRectangle(cornerRadius: 14))
+                            }
+
+                            ShareLink(item: shareText) {
+                                HStack(spacing: 10) {
+                                    Image(systemName: "square.and.arrow.up")
+                                    Text(lang.t("Κοινοποίηση Αποτελεσμάτων", "Share Results"))
+                                }
+                                .font(.headline).foregroundStyle(Color.catPurple)
+                                .frame(maxWidth: .infinity).padding(.vertical, 16)
+                                .background(Color.catPurple.opacity(0.1))
                                 .clipShape(RoundedRectangle(cornerRadius: 14))
                             }
                         }

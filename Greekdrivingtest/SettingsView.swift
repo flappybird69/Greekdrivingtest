@@ -131,7 +131,7 @@ struct SettingsView: View {
                         InfoRow(
                             icon: "info.circle.fill", color: .catBlue,
                             title: lang.t("Έκδοση", "Version"),
-                            value: "1.0"
+                            value: Bundle.main.infoDictionary?["CFBundleShortVersionString"] as? String ?? "1.0"
                         )
                         InfoRow(
                             icon: "flag.fill", color: .catRed,
