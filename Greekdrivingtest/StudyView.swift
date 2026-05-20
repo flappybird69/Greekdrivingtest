@@ -1579,3 +1579,9 @@ struct FlashcardDetailView: View {
         .background(AppBackground())
     }
 }
+
+#Preview {
+    StudyView()
+        .environment(LanguageManager())
+        .modelContainer(for: [TestResult.self, BookmarkedQuestion.self, DifficultQuestion.self], inMemory: true)
+}

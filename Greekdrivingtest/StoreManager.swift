@@ -3,7 +3,7 @@ import Foundation
 
 // MARK: - Product ID
 // Create this product in App Store Connect → In-App Purchases → Add (Non-Consumable)
-private let removeAdsProductID = "com.greekdrivingtest.removeads"
+private let removeAdsProductID = "com.sephiance.driverstestgrAPP.remove_ads"
 
 @Observable
 class StoreManager {

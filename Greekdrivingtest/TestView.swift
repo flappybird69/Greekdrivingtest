@@ -798,3 +798,9 @@ struct WrongAnswerCard: View {
         .overlay(RoundedRectangle(cornerRadius: 16).stroke(Color.failRed.opacity(0.18), lineWidth: 1))
     }
 }
+
+#Preview {
+    TestView(selectedTab: .constant(1))
+        .environment(LanguageManager())
+        .modelContainer(for: [TestResult.self, BookmarkedQuestion.self, DifficultQuestion.self], inMemory: true)
+}

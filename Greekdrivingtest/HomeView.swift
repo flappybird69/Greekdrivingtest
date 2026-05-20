@@ -712,3 +712,8 @@ struct OfficialLinkRow: View {
     }
 }
 
+#Preview {
+    HomeView(selectedTab: .constant(0))
+        .environment(LanguageManager())
+        .modelContainer(for: [TestResult.self, BookmarkedQuestion.self, DifficultQuestion.self], inMemory: true)
+}

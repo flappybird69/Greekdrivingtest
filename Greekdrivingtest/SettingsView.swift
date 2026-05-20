@@ -249,3 +249,10 @@ struct InfoRow: View {
         }
     }
 }
+
+#Preview {
+    SettingsView()
+        .environment(LanguageManager())
+        .environment(StoreManager())
+        .modelContainer(for: [TestResult.self, BookmarkedQuestion.self, DifficultQuestion.self], inMemory: true)
+}

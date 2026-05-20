@@ -334,3 +334,9 @@ struct HistoryRow: View {
         .cardStyle()
     }
 }
+
+#Preview {
+    StatsView()
+        .environment(LanguageManager())
+        .modelContainer(for: [TestResult.self, BookmarkedQuestion.self, DifficultQuestion.self], inMemory: true)
+}
