@@ -7,10 +7,17 @@
 
 import SwiftUI
 import SwiftData
+import GoogleMobileAds
+import UserNotifications
 
 @main
 struct GreekdrivingtestApp: App {
     @State private var langManager = LanguageManager()
+    @State private var storeManager = StoreManager()
+
+    init() {
+        MobileAds.shared.start()
+    }
 
     let container: ModelContainer = {
         let schema = Schema([TestResult.self, BookmarkedQuestion.self, DifficultQuestion.self])
@@ -32,7 +39,7 @@ struct GreekdrivingtestApp: App {
         )
 
         do {
-            let config = ModelConfiguration(url: storeURL)
+            let config = ModelConfiguration(url: storeURL, cloudKitDatabase: .automatic)
             return try ModelContainer(for: schema, configurations: config)
         } catch {
             fatalError("SwiftData error: \(error)")
@@ -43,7 +50,18 @@ struct GreekdrivingtestApp: App {
         WindowGroup {
             ContentView()
                 .environment(langManager)
+                .environment(storeManager)
+                .onAppear { requestPushPermission() }
         }
         .modelContainer(container)
+    }
+
+    private func requestPushPermission() {
+        UNUserNotificationCenter.current().requestAuthorization(options: [.alert, .badge, .sound]) { granted, _ in
+            guard granted else { return }
+            DispatchQueue.main.async {
+                UIApplication.shared.registerForRemoteNotifications()
+            }
+        }
     }
 }

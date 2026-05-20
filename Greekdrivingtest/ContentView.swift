@@ -4,32 +4,41 @@ struct ContentView: View {
     @Environment(LanguageManager.self) private var lang
     @State private var selectedTab = 0
     @AppStorage("hasSeenOnboarding") private var hasSeenOnboarding = false
+    @Environment(StoreManager.self) private var storeManager
     @AppStorage("streakCount") private var streakCount = 0
     @AppStorage("streakLastTimestamp") private var streakLastTimestamp: Double = 0
 
     var body: some View {
-        TabView(selection: $selectedTab) {
-            HomeView(selectedTab: $selectedTab)
-                .tabItem { Label(lang.t("Αρχική", "Home"), systemImage: "house.fill") }
-                .tag(0)
-            StudyView()
-                .tabItem { Label(lang.t("Μελέτη", "Study"), systemImage: "book.fill") }
-                .tag(1)
-            TestView(selectedTab: $selectedTab)
-                .tabItem { Label(lang.t("Εξέταση", "Exam"), systemImage: "checkmark.circle.fill") }
-                .tag(2)
-            StatsView()
-                .tabItem { Label(lang.t("Στατιστικά", "Stats"), systemImage: "chart.bar.fill") }
-                .tag(3)
-            SettingsView()
-                .tabItem { Label(lang.t("Ρυθμίσεις", "Settings"), systemImage: "gearshape.fill") }
-                .tag(4)
+        VStack(spacing: 0) {
+            TabView(selection: $selectedTab) {
+                HomeView(selectedTab: $selectedTab)
+                    .tabItem { Label(lang.t("Αρχική", "Home"), systemImage: "house.fill") }
+                    .tag(0)
+                StudyView()
+                    .tabItem { Label(lang.t("Μελέτη", "Study"), systemImage: "book.fill") }
+                    .tag(1)
+                TestView(selectedTab: $selectedTab)
+                    .tabItem { Label(lang.t("Εξέταση", "Exam"), systemImage: "checkmark.circle.fill") }
+                    .tag(2)
+                StatsView()
+                    .tabItem { Label(lang.t("Στατιστικά", "Stats"), systemImage: "chart.bar.fill") }
+                    .tag(3)
+                SettingsView()
+                    .tabItem { Label(lang.t("Ρυθμίσεις", "Settings"), systemImage: "gearshape.fill") }
+                    .tag(4)
+            }
+            .tint(.greekBlue)
+            .fullScreenCover(isPresented: Binding(get: { !hasSeenOnboarding }, set: { _ in })) {
+                OnboardingView()
+            }
+            .onAppear { updateStreak() }
+
+            if !storeManager.adsRemoved {
+                BannerAdView(adUnitID: "ca-app-pub-5451863742660695/5612935276")
+                    .frame(height: 50)
+                    .background(Color(.systemBackground))
+            }
         }
-        .tint(.greekBlue)
-        .fullScreenCover(isPresented: Binding(get: { !hasSeenOnboarding }, set: { _ in })) {
-            OnboardingView()
-        }
-        .onAppear { updateStreak() }
     }
 
     private func updateStreak() {

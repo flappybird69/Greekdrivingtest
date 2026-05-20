@@ -6,6 +6,10 @@
 	objectVersion = 77;
 	objects = {
 
+/* Begin PBXBuildFile section */
+		52FFF7072FBD3B1E006ECE7C /* GoogleMobileAds in Frameworks */ = {isa = PBXBuildFile; productRef = 52FFF7062FBD3B1E006ECE7C /* GoogleMobileAds */; };
+/* End PBXBuildFile section */
+
 /* Begin PBXFileReference section */
 		52AA029A2FB8DC9A00455B27 /* Greekdrivingtest.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = Greekdrivingtest.app; sourceTree = BUILT_PRODUCTS_DIR; };
 /* End PBXFileReference section */
@@ -36,6 +40,7 @@
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				52FFF7072FBD3B1E006ECE7C /* GoogleMobileAds in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -78,6 +83,7 @@
 			);
 			name = Greekdrivingtest;
 			packageProductDependencies = (
+				52FFF7062FBD3B1E006ECE7C /* GoogleMobileAds */,
 			);
 			productName = Greekdrivingtest;
 			productReference = 52AA029A2FB8DC9A00455B27 /* Greekdrivingtest.app */;
@@ -107,6 +113,9 @@
 			);
 			mainGroup = 52AA02912FB8DC9A00455B27;
 			minimizedProjectReferenceProxies = 1;
+			packageReferences = (
+				52FFF7052FBD3B1E006ECE7C /* XCRemoteSwiftPackageReference "swift-package-manager-google-mobile-ads" */,
+			);
 			preferredProjectObjectVersion = 77;
 			productRefGroup = 52AA029B2FB8DC9A00455B27 /* Products */;
 			projectDirPath = "";
@@ -353,6 +362,25 @@
 			defaultConfigurationName = Release;
 		};
 /* End XCConfigurationList section */
+
+/* Begin XCRemoteSwiftPackageReference section */
+		52FFF7052FBD3B1E006ECE7C /* XCRemoteSwiftPackageReference "swift-package-manager-google-mobile-ads" */ = {
+			isa = XCRemoteSwiftPackageReference;
+			repositoryURL = "https://github.com/googleads/swift-package-manager-google-mobile-ads";
+			requirement = {
+				kind = upToNextMajorVersion;
+				minimumVersion = 13.4.0;
+			};
+		};
+/* End XCRemoteSwiftPackageReference section */
+
+/* Begin XCSwiftPackageProductDependency section */
+		52FFF7062FBD3B1E006ECE7C /* GoogleMobileAds */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = 52FFF7052FBD3B1E006ECE7C /* XCRemoteSwiftPackageReference "swift-package-manager-google-mobile-ads" */;
+			productName = GoogleMobileAds;
+		};
+/* End XCSwiftPackageProductDependency section */
 	};
 	rootObject = 52AA02922FB8DC9A00455B27 /* Project object */;
 }

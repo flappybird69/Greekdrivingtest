@@ -87,12 +87,12 @@ struct Question: Identifiable {
 
 @Model
 final class TestResult {
-    var date: Date
-    var score: Int
-    var totalQuestions: Int
-    var passed: Bool
-    var timeElapsed: TimeInterval
-    var wrongQuestionIds: [Int]
+    var date: Date = Date()
+    var score: Int = 0
+    var totalQuestions: Int = 30
+    var passed: Bool = false
+    var timeElapsed: TimeInterval = 0
+    var wrongQuestionIds: [Int] = []
 
     init(score: Int, totalQuestions: Int = 30, passed: Bool,
          timeElapsed: TimeInterval, wrongQuestionIds: [Int]) {
@@ -110,8 +110,8 @@ final class TestResult {
 
 @Model
 final class BookmarkedQuestion {
-    var questionId: Int
-    var dateAdded: Date
+    var questionId: Int = 0
+    var dateAdded: Date = Date()
 
     init(questionId: Int) {
         self.questionId = questionId
@@ -121,8 +121,8 @@ final class BookmarkedQuestion {
 
 @Model
 final class DifficultQuestion {
-    var questionId: Int
-    var dateAdded: Date
+    var questionId: Int = 0
+    var dateAdded: Date = Date()
 
     init(questionId: Int) {
         self.questionId = questionId
