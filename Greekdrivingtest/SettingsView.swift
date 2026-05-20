@@ -1,11 +1,9 @@
 import SwiftUI
 import SwiftData
-import StoreKit
 
 struct SettingsView: View {
     @Environment(LanguageManager.self) private var lang
     @Environment(\.modelContext) private var modelContext
-    @Environment(StoreManager.self) private var storeManager
     @Query private var results: [TestResult]
     @State private var showingClearConfirm = false
     @AppStorage("userName") private var userName = ""
@@ -128,72 +126,6 @@ struct SettingsView: View {
                         }
                     }
 
-                    // Remove Ads
-                    Section {
-                        if storeManager.adsRemoved {
-                            HStack(spacing: 12) {
-                                Image(systemName: "checkmark.seal.fill")
-                                    .foregroundColor(.passGreen)
-                                    .frame(width: 28)
-                                Text(lang.t("Διαφημίσεις απενεργοποιημένες", "Ads removed"))
-                                    .foregroundColor(.passGreen)
-                                    .fontWeight(.semibold)
-                            }
-                        } else {
-                            Button {
-                                Task { await storeManager.purchase() }
-                            } label: {
-                                HStack(spacing: 12) {
-                                    Image(systemName: "star.fill")
-                                        .foregroundColor(.greekGold)
-                                        .frame(width: 28)
-                                    VStack(alignment: .leading, spacing: 2) {
-                                        Text(lang.t("Αφαίρεση Διαφημίσεων", "Remove Ads"))
-                                            .foregroundColor(.primary)
-                                            .fontWeight(.semibold)
-                                        if let product = storeManager.product {
-                                            Text(product.displayPrice)
-                                                .font(.caption)
-                                                .foregroundColor(.secondary)
-                                        }
-                                    }
-                                    Spacer()
-                                    if storeManager.isPurchasing {
-                                        ProgressView().scaleEffect(0.8)
-                                    }
-                                }
-                            }
-                            .disabled(storeManager.isPurchasing || storeManager.product == nil)
-
-                            Button {
-                                Task { await storeManager.restore() }
-                            } label: {
-                                HStack(spacing: 12) {
-                                    Image(systemName: "arrow.clockwise")
-                                        .foregroundColor(.greekBlue)
-                                        .frame(width: 28)
-                                    Text(lang.t("Επαναφορά Αγοράς", "Restore Purchase"))
-                                        .foregroundColor(.greekBlue)
-                                }
-                            }
-                            .disabled(storeManager.isPurchasing)
-                        }
-
-                        if let error = storeManager.errorMessage {
-                            Text(error)
-                                .font(.caption)
-                                .foregroundColor(.catRed)
-                        }
-                    } header: {
-                        Text(lang.t("Αγορά", "Purchase"))
-                    } footer: {
-                        Text(lang.t(
-                            "Εφάπαξ αγορά. Χωρίς συνδρομή.",
-                            "One-time purchase. No subscription."
-                        ))
-                        .font(.caption)
-                    }
-
                     // About
                     Section {
                         InfoRow(
@@ -253,6 +185,5 @@ struct InfoRow: View {
 #Preview {
     SettingsView()
         .environment(LanguageManager())
-        .environment(StoreManager())
         .modelContainer(for: [TestResult.self, BookmarkedQuestion.self, DifficultQuestion.self], inMemory: true)
 }

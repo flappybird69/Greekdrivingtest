@@ -7,17 +7,13 @@
 
 import SwiftUI
 import SwiftData
-import GoogleMobileAds
 import UserNotifications
 
 @main
 struct GreekdrivingtestApp: App {
     @State private var langManager = LanguageManager()
-    @State private var storeManager = StoreManager()
 
-    init() {
-        MobileAds.shared.start()
-    }
+    init() {}
 
     let container: ModelContainer = {
         let schema = Schema([TestResult.self, BookmarkedQuestion.self, DifficultQuestion.self])
@@ -50,7 +46,6 @@ struct GreekdrivingtestApp: App {
         WindowGroup {
             ContentView()
                 .environment(langManager)
-                .environment(storeManager)
                 .onAppear { requestPushPermission() }
         }
         .modelContainer(container)

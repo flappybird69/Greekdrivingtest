@@ -4,7 +4,6 @@ struct ContentView: View {
     @Environment(LanguageManager.self) private var lang
     @State private var selectedTab = 0
     @AppStorage("hasSeenOnboarding") private var hasSeenOnboarding = false
-    @Environment(StoreManager.self) private var storeManager
     @AppStorage("streakCount") private var streakCount = 0
     @AppStorage("streakLastTimestamp") private var streakLastTimestamp: Double = 0
 
@@ -32,12 +31,6 @@ struct ContentView: View {
                 OnboardingView()
             }
             .onAppear { updateStreak() }
-
-            if !storeManager.adsRemoved {
-                BannerAdView(adUnitID: "ca-app-pub-5451863742660695/5612935276")
-                    .frame(height: 50)
-                    .background(Color(.systemBackground))
-            }
         }
     }
 
