@@ -141,6 +141,7 @@ struct SettingsView: View {
                                     Spacer()
                                 }
                             }
+
                             Button {
                                 Task { await store.purchase() }
                             } label: {
