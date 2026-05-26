@@ -1,7 +1,9 @@
 import SwiftUI
+import StoreKit
 
 struct ContentView: View {
     @Environment(LanguageManager.self) private var lang
+    @Environment(StoreKitManager.self) private var store
     @State private var selectedTab = 0
     @AppStorage("hasSeenOnboarding") private var hasSeenOnboarding = false
     @AppStorage("streakCount") private var streakCount = 0
@@ -29,6 +31,9 @@ struct ContentView: View {
             .tint(.greekBlue)
             .fullScreenCover(isPresented: Binding(get: { !hasSeenOnboarding }, set: { _ in })) {
                 OnboardingView()
+            }
+            .fullScreenCover(isPresented: Binding(get: { hasSeenOnboarding && !store.isUnlocked }, set: { _ in })) {
+                PaywallView()
             }
             .onAppear { updateStreak() }
         }

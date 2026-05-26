@@ -1,8 +1,10 @@
 import SwiftUI
 import SwiftData
+import StoreKit
 
 struct SettingsView: View {
     @Environment(LanguageManager.self) private var lang
+    @Environment(StoreKitManager.self) private var store
     @Environment(\.modelContext) private var modelContext
     @Query private var results: [TestResult]
     @State private var showingClearConfirm = false
@@ -112,6 +114,70 @@ struct SettingsView: View {
                         )
                     } header: {
                         Text(lang.t("Σύνοψη", "Summary"))
+                    }
+
+                    // Pro Access
+                    Section {
+                        if store.isPurchased {
+                            HStack {
+                                Image(systemName: "checkmark.seal.fill")
+                                    .foregroundStyle(Color.passGreen).frame(width: 28)
+                                Text(lang.t("Πλήρης Πρόσβαση Ενεργή", "Full Access Unlocked"))
+                                Spacer()
+                                Image(systemName: "checkmark")
+                                    .foregroundStyle(Color.passGreen).font(.subheadline.bold())
+                            }
+                        } else {
+                            if store.isTrialActive {
+                                HStack {
+                                    Image(systemName: "clock.fill")
+                                        .foregroundStyle(Color.catOrange).frame(width: 28)
+                                    VStack(alignment: .leading, spacing: 2) {
+                                        Text(lang.t("Δοκιμαστική Περίοδος", "Free Trial Active"))
+                                        let d = store.trialDaysRemaining
+                                        Text(lang.t("\(d) \(d == 1 ? "μέρα" : "μέρες") απομένουν", "\(d) \(d == 1 ? "day" : "days") remaining"))
+                                            .font(.caption).foregroundStyle(.secondary)
+                                    }
+                                    Spacer()
+                                }
+                            }
+                            Button {
+                                Task { await store.purchase() }
+                            } label: {
+                                HStack {
+                                    Image(systemName: "lock.open.fill")
+                                        .foregroundStyle(Color.greekBlue).frame(width: 28)
+                                    Text(lang.t("Ξεκλείδωμα — \(store.displayPrice)", "Unlock — \(store.displayPrice)"))
+                                        .foregroundStyle(Color.greekBlue).fontWeight(.semibold)
+                                    Spacer()
+                                    if store.isLoading {
+                                        ProgressView().scaleEffect(0.8)
+                                    }
+                                }
+                            }
+                            .disabled(store.isLoading)
+                            Button {
+                                Task { await store.restorePurchases() }
+                            } label: {
+                                HStack {
+                                    Image(systemName: "arrow.clockwise")
+                                        .foregroundStyle(Color.secondary).frame(width: 28)
+                                    Text(lang.t("Επαναφορά Αγορών", "Restore Purchases"))
+                                        .foregroundStyle(Color.secondary)
+                                    Spacer()
+                                }
+                            }
+                            .disabled(store.isLoading)
+                        }
+                    } header: {
+                        Text(lang.t("Pro Πρόσβαση", "Pro Access"))
+                    } footer: {
+                        if !store.isPurchased {
+                            Text(lang.t(
+                                "Εφάπαξ αγορά \(store.displayPrice) · Χωρίς συνδρομή",
+                                "One-time purchase \(store.displayPrice) · No subscription"
+                            ))
+                        }
                     }
 
                     // Clear history

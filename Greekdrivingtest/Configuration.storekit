@@ -1,0 +1,35 @@
+{
+  "identifier" : "44A9E2B1-7C3F-4D8E-A1B2-C3D4E5F6A7B8",
+  "nonConsumableProducts" : [
+    {
+      "displayPrice" : "2.99",
+      "familyShareable" : false,
+      "internalID" : "1A2B3C4D-5E6F-7A8B-9C0D-1E2F3A4B5C6D",
+      "localizations" : [
+        {
+          "description" : "Unlock full access to the Greek Driving Test app forever. One-time purchase, no subscription.",
+          "displayName" : "Lifetime Unlock",
+          "locale" : "en_US"
+        },
+        {
+          "description" : "Ξεκλειδώστε πλήρη πρόσβαση στην εφαρμογή για πάντα. Εφάπαξ αγορά, χωρίς συνδρομή.",
+          "displayName" : "Ισόβιο Ξεκλείδωμα",
+          "locale" : "el_GR"
+        }
+      ],
+      "productID" : "lifetime_unlock",
+      "referenceName" : "Lifetime Unlock",
+      "type" : "NonConsumable"
+    }
+  ],
+  "settings" : {
+    "_locale" : "el_GR",
+    "_storefront" : "GRC",
+    "_billingGracePeriodEnabled" : false,
+    "_askToBuyEnabled" : false
+  },
+  "version" : {
+    "major" : 2,
+    "minor" : 0
+  }
+}

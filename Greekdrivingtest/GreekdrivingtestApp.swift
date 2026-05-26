@@ -7,11 +7,13 @@
 
 import SwiftUI
 import SwiftData
+import StoreKit
 import UserNotifications
 
 @main
 struct GreekdrivingtestApp: App {
     @State private var langManager = LanguageManager()
+    @State private var storeKit = StoreKitManager()
 
     init() {}
 
@@ -46,6 +48,7 @@ struct GreekdrivingtestApp: App {
         WindowGroup {
             ContentView()
                 .environment(langManager)
+                .environment(storeKit)
                 .onAppear { requestPushPermission() }
         }
         .modelContainer(container)

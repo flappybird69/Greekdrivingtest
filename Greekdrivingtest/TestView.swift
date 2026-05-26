@@ -1,5 +1,6 @@
 import SwiftUI
 import SwiftData
+import StoreKit
 private enum TestPhase { case ready, inProgress, results }
 
 // MARK: - TestView
@@ -9,6 +10,9 @@ struct TestView: View {
     @Environment(LanguageManager.self) private var lang
     @Environment(\.modelContext) private var modelContext
     @Query private var difficultQuestions: [DifficultQuestion]
+
+    @Environment(\.requestReview) private var requestReview
+    @AppStorage("passedExamCount") private var passedExamCount = 0
 
     @State private var phase: TestPhase = .ready
     @State private var questions: [Question] = []
@@ -68,6 +72,13 @@ struct TestView: View {
             if newPhase == .results && passed {
                 showConfetti = true
                 DispatchQueue.main.asyncAfter(deadline: .now() + 2.2) { showConfetti = false }
+                passedExamCount += 1
+                if passedExamCount == 2 || passedExamCount == 10 {
+                    Task {
+                        try? await Task.sleep(for: .seconds(1.5))
+                        requestReview()
+                    }
+                }
             }
         }
     }
