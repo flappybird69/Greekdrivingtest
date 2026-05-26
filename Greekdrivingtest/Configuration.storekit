@@ -17,7 +17,7 @@
           "locale" : "el_GR"
         }
       ],
-      "productID" : "lifetime_unlock",
+      "productID" : "com.john.armyapp.Greekdrivingtest.lifetime_unlock",
       "referenceName" : "Lifetime Unlock",
       "type" : "NonConsumable"
     }

@@ -2,7 +2,7 @@ import StoreKit
 
 @Observable
 final class StoreKitManager {
-    nonisolated static let lifetimeProductID = "lifetime_unlock"
+    nonisolated static let lifetimeProductID = "com.john.armyapp.Greekdrivingtest.lifetime_unlock"
     private nonisolated static let firstLaunchKey = "firstLaunchDate"
 
     // MARK: - State
