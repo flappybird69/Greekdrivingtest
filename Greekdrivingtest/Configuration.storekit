@@ -2,7 +2,7 @@
   "identifier" : "44A9E2B1-7C3F-4D8E-A1B2-C3D4E5F6A7B8",
   "nonConsumableProducts" : [
     {
-      "displayPrice" : "2.99",
+      "displayPrice" : "9.99",
       "familyShareable" : false,
       "internalID" : "1A2B3C4D-5E6F-7A8B-9C0D-1E2F3A4B5C6D",
       "localizations" : [
@@ -20,6 +20,43 @@
       "productID" : "com.john.armyapp.Greekdrivingtest.lifetime_unlock",
       "referenceName" : "Lifetime Unlock",
       "type" : "NonConsumable"
+    }
+  ],
+  "subscriptions" : [
+    {
+      "displayPrice" : "1.99",
+      "familyShareable" : false,
+      "groupNumber" : 1,
+      "internalID" : "5F6E7D8C-9B0A-1C2D-3E4F-5A6B7C8D9E0F",
+      "introductoryOffer" : {
+        "price" : "0.00",
+        "numberOfPeriods" : 1,
+        "paymentMode" : "FreeTrial",
+        "subscriptionPeriod" : {
+          "numberOfUnits" : 3,
+          "unit" : "Day"
+        }
+      },
+      "localizations" : [
+        {
+          "description" : "Full access with a 3-day free trial, then €1.99 per year. Cancel anytime.",
+          "displayName" : "Yearly Subscription",
+          "locale" : "en_US"
+        },
+        {
+          "description" : "Πλήρης πρόσβαση με 3ήμερη δωρεάν δοκιμή, στη συνέχεια €1.99 τον χρόνο. Ακύρωση οποτεδήποτε.",
+          "displayName" : "Ετήσια Συνδρομή",
+          "locale" : "el_GR"
+        }
+      ],
+      "productID" : "com.john.armyapp.Greekdrivingtest.yearly",
+      "referenceName" : "Yearly Subscription",
+      "subscriptionGroupName" : "Access",
+      "subscriptionPeriod" : {
+        "numberOfUnits" : 1,
+        "unit" : "Year"
+      },
+      "type" : "Auto-Renewable Subscription"
     }
   ],
   "settings" : {

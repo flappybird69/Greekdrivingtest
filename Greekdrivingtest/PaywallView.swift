@@ -20,15 +20,19 @@ struct PaywallView: View {
 
             ScrollView(showsIndicators: false) {
                 VStack(spacing: 0) {
-                    Spacer(minLength: 56)
-                    headerSection
-                    Spacer(minLength: 28)
-                    featuresCard
-                    Spacer(minLength: 16)
-                    priceCard
-                    Spacer(minLength: 28)
-                    ctaSection
                     Spacer(minLength: 48)
+                    headerSection
+                    Spacer(minLength: 24)
+                    featuresCard
+                    Spacer(minLength: 24)
+                    subscriptionOption
+                    Spacer(minLength: 12)
+                    lifetimeOption
+                    Spacer(minLength: 24)
+                    restoreSection
+                    Spacer(minLength: 32)
+                    footnotes
+                    Spacer(minLength: 24)
                 }
                 .padding(.horizontal, 24)
             }
@@ -38,7 +42,7 @@ struct PaywallView: View {
     // MARK: - Header
 
     private var headerSection: some View {
-        VStack(spacing: 18) {
+        VStack(spacing: 16) {
             ZStack {
                 Circle()
                     .fill(Color.white.opacity(0.14))
@@ -66,38 +70,6 @@ struct PaywallView: View {
                 .multilineTextAlignment(.center)
                 .lineSpacing(3)
             }
-
-            trialBadge
-        }
-    }
-
-    @ViewBuilder
-    private var trialBadge: some View {
-        if store.isTrialActive {
-            HStack(spacing: 6) {
-                Image(systemName: "clock.fill").font(.caption.bold())
-                let d = store.trialDaysRemaining
-                Text(lang.t(
-                    "Δοκιμαστική περίοδος: \(d) \(d == 1 ? "μέρα" : "μέρες") ακόμα",
-                    "Trial: \(d) \(d == 1 ? "day" : "days") left"
-                ))
-                .font(.caption.bold())
-            }
-            .foregroundStyle(Color.greekGold)
-            .padding(.horizontal, 14).padding(.vertical, 7)
-            .background(Color.greekGold.opacity(0.15))
-            .clipShape(Capsule())
-            .overlay(Capsule().stroke(Color.greekGold.opacity(0.4), lineWidth: 1))
-        } else {
-            HStack(spacing: 6) {
-                Image(systemName: "lock.fill").font(.caption.bold())
-                Text(lang.t("Η δοκιμαστική περίοδος έληξε", "Trial period expired"))
-                    .font(.caption.bold())
-            }
-            .foregroundStyle(.white.opacity(0.55))
-            .padding(.horizontal, 14).padding(.vertical, 7)
-            .background(Color.white.opacity(0.08))
-            .clipShape(Capsule())
         }
     }
 
@@ -143,61 +115,79 @@ struct PaywallView: View {
         }
     }
 
-    // MARK: - Price
+    // MARK: - Subscription Option
 
-    private var priceCard: some View {
-        HStack(spacing: 0) {
-            VStack(alignment: .leading, spacing: 4) {
-                Text(lang.t("Εφάπαξ αγορά", "One-time purchase"))
-                    .font(.subheadline.weight(.semibold))
-                    .foregroundStyle(.white.opacity(0.85))
-                Text(lang.t("Χωρίς συνδρομή, ποτέ.", "No subscription, ever."))
-                    .font(.caption)
-                    .foregroundStyle(.white.opacity(0.45))
-            }
-            Spacer()
-            VStack(alignment: .trailing, spacing: 2) {
-                Text(store.displayPrice)
-                    .font(.system(size: 30, weight: .bold, design: .rounded))
-                    .foregroundStyle(.white)
-                Text(lang.t("εφ' άπαξ", "one time"))
-                    .font(.caption2)
-                    .foregroundStyle(.white.opacity(0.45))
-            }
+    private var subscriptionOption: some View {
+        VStack(spacing: 14) {
+            purchaseButton(
+                title: lang.t("Ξεκινήστε Δωρεάν Δοκιμή 3 Ημερών", "Start 3-Day Free Trial"),
+                subtitle: lang.t("Στη συνέχεια \(store.yearlyDisplayPrice)/έτος · Ακύρωση οποτεδήποτε", "Then \(store.yearlyDisplayPrice)/year · Cancel anytime"),
+                isLoading: store.isLoading,
+                action: { Task { await store.purchase(StoreKitManager.yearlyProductID) } }
+            )
         }
-        .padding(.horizontal, 20).padding(.vertical, 18)
+        .padding(20)
         .background(.ultraThinMaterial.opacity(0.6))
-        .clipShape(RoundedRectangle(cornerRadius: 18))
+        .clipShape(RoundedRectangle(cornerRadius: 20))
         .overlay(
-            RoundedRectangle(cornerRadius: 18)
+            RoundedRectangle(cornerRadius: 20)
                 .stroke(Color.greekGold.opacity(0.35), lineWidth: 1)
         )
     }
 
-    // MARK: - CTA
+    // MARK: - Lifetime Option
 
-    private var ctaSection: some View {
-        VStack(spacing: 14) {
-            Button {
-                Task { await store.purchase() }
-            } label: {
+    private var lifetimeOption: some View {
+        Button {
+            Task { await store.purchase(StoreKitManager.lifetimeProductID) }
+        } label: {
+            HStack {
+                Image(systemName: "infinity")
+                    .font(.system(size: 16, weight: .semibold))
+                Text(lang.t("Ισόβια Πρόσβαση — \(store.lifetimeDisplayPrice)", "Lifetime Access — \(store.lifetimeDisplayPrice)"))
+                    .font(.headline.weight(.semibold))
+                Spacer()
+            }
+            .foregroundStyle(.white)
+            .padding(.horizontal, 20).padding(.vertical, 16)
+            .frame(maxWidth: .infinity)
+            .background(Color.white.opacity(0.10))
+            .clipShape(RoundedRectangle(cornerRadius: 16))
+            .overlay(RoundedRectangle(cornerRadius: 16).stroke(Color.white.opacity(0.15), lineWidth: 1))
+        }
+        .disabled(store.isLoading)
+        .overlay(alignment: .topTrailing) {
+            Text(lang.t("εφάπαξ", "one-time"))
+                .font(.caption2.bold())
+                .foregroundStyle(Color.greekGold)
+                .padding(.horizontal, 10).padding(.vertical, 4)
+                .background(Color.greekGold.opacity(0.15))
+                .clipShape(Capsule())
+                .padding(8)
+        }
+    }
+
+    // MARK: - Helpers
+
+    @ViewBuilder
+    private func purchaseButton(title: String, subtitle: String, isLoading: Bool, action: @escaping () -> Void) -> some View {
+        VStack(spacing: 6) {
+            Button(action: action) {
                 ZStack {
-                    if store.isLoading {
+                    if isLoading {
                         ProgressView().tint(Color.greekDark)
                     } else {
                         HStack(spacing: 10) {
                             Image(systemName: "lock.open.fill").font(.headline.bold())
-                            Text(lang.t(
-                                "Ξεκλείδωμα — \(store.displayPrice)",
-                                "Unlock — \(store.displayPrice)"
-                            ))
-                            .font(.headline.bold())
+                            Text(title)
+                                .font(.headline.bold())
+                                .multilineTextAlignment(.center)
                         }
                         .foregroundStyle(Color.greekDark)
                     }
                 }
                 .frame(maxWidth: .infinity)
-                .frame(height: 58)
+                .frame(height: 56)
                 .background(
                     LinearGradient(
                         colors: [Color.greekGold, Color.greekGold.opacity(0.80)],
@@ -208,7 +198,26 @@ struct PaywallView: View {
                 .clipShape(Capsule())
                 .shadow(color: Color.greekGold.opacity(0.55), radius: 18, x: 0, y: 8)
             }
-            .disabled(store.isLoading)
+            .disabled(isLoading)
+
+            Text(subtitle)
+                .font(.caption)
+                .foregroundStyle(.white.opacity(0.55))
+                .multilineTextAlignment(.center)
+        }
+    }
+
+    // MARK: - Restore
+
+    private var restoreSection: some View {
+        VStack(spacing: 10) {
+            if let err = store.purchaseError {
+                Text(err)
+                    .font(.caption)
+                    .foregroundStyle(.white.opacity(0.55))
+                    .multilineTextAlignment(.center)
+                    .padding(.horizontal, 8)
+            }
 
             Button {
                 Task { await store.restorePurchases() }
@@ -218,23 +227,30 @@ struct PaywallView: View {
                     .foregroundStyle(.white.opacity(0.50))
             }
             .disabled(store.isLoading)
+        }
+    }
 
-            if let err = store.purchaseError {
-                Text(err)
-                    .font(.caption)
-                    .foregroundStyle(.white.opacity(0.55))
-                    .multilineTextAlignment(.center)
-                    .padding(.horizontal, 8)
-            }
+    // MARK: - Footnotes
 
+    private var footnotes: some View {
+        VStack(spacing: 8) {
             Text(lang.t(
-                "Η πληρωμή χρεώνεται μέσω Apple ID.\nΜεταφορά σε νέες συσκευές χωρίς επιπλέον κόστος.",
-                "Payment is charged to your Apple ID.\nTransfer to new devices at no extra cost."
+                "Ετήσια συνδρομή \(store.yearlyDisplayPrice)/έτος. Δωρεάν δοκιμή 3 ημερών για νέους συνδρομητές. Ανανεώνεται αυτόματα εκτός αν ακυρωθεί 24 ώρες πριν τη λήξη. Χρέωση μέσω Apple ID. Ακύρωση από Ρυθμίσεις → Συνδρομές.",
+                "Yearly subscription \(store.yearlyDisplayPrice)/year. 3-day free trial for new subscribers. Auto-renews unless cancelled 24h before renewal. Charged to your Apple ID. Cancel in Settings → Subscriptions."
             ))
             .font(.caption2)
-            .foregroundStyle(.white.opacity(0.30))
+            .foregroundStyle(.white.opacity(0.28))
             .multilineTextAlignment(.center)
             .lineSpacing(2)
+
+            HStack(spacing: 16) {
+                Link(lang.t("Όροι Χρήσης", "Terms of Use"),
+                     destination: URL(string: "https://www.apple.com/legal/internet-services/itunes/dev/stdeula/")!)
+                Link(lang.t("Πολιτική Απορρήτου", "Privacy Policy"),
+                     destination: URL(string: "https://www.termsfeed.com/live/your-privacy-policy-url")!)
+            }
+            .font(.caption2.bold())
+            .foregroundStyle(.white.opacity(0.45))
         }
     }
 }

@@ -241,7 +241,7 @@ struct FlashcardCard: View {
                     switch question.visual {
                     case .none: EmptyView()
                     default:
-                        QuestionVisualView(visual: question.visual, size: 130, borderless: true)
+                        QuestionVisualView(visual: question.visual, size: 200, borderless: true)
                     }
 
                     Text(question.text(greek: lang.language.isGreek))
@@ -1483,7 +1483,7 @@ struct CategoryQuestionCard: View {
             switch question.visual {
             case .none: EmptyView()
             default:
-                QuestionVisualView(visual: question.visual, size: 40)
+                QuestionVisualView(visual: question.visual, size: 80)
                     .frame(maxWidth: .infinity, alignment: .center)
             }
 

@@ -3,42 +3,39 @@ import StoreKit
 @Observable
 final class StoreKitManager {
     nonisolated static let lifetimeProductID = "com.john.armyapp.Greekdrivingtest.lifetime_unlock"
-    private nonisolated static let firstLaunchKey = "firstLaunchDate"
+    nonisolated static let yearlyProductID = "com.john.armyapp.Greekdrivingtest.yearly"
 
     // MARK: - State
-    let firstLaunchDate: Date
-    private(set) var product: Product?
-    private(set) var isPurchased = false
+    private(set) var lifetimeProduct: Product?
+    private(set) var yearlyProduct: Product?
+    private(set) var isLifetimePurchased = false
+    private(set) var isSubscriptionActive = false
     private(set) var isLoading = false
     private(set) var purchaseError: String?
+    private(set) var isTrialActive = false
+    private(set) var subscriptionExpiryDate: Date?
+
+    var isUnlocked: Bool { isLifetimePurchased || isSubscriptionActive }
+
+    var lifetimeDisplayPrice: String { lifetimeProduct?.displayPrice ?? "€9.99" }
+    var yearlyDisplayPrice: String { yearlyProduct?.displayPrice ?? "€1.99" }
+
+    var trialDaysRemaining: Int {
+        guard isTrialActive, let expiry = subscriptionExpiryDate else { return 0 }
+        return max(0, Calendar.current.dateComponents([.day], from: Date(), to: expiry).day ?? 0)
+    }
 
     @ObservationIgnored
     private var transactionListener: Task<Void, Never>?
 
-    // MARK: - Trial
-
-    private var elapsed: TimeInterval { Date().timeIntervalSince(firstLaunchDate) }
-    var isTrialActive: Bool { elapsed < 3 * 86400 }
-    var trialDaysRemaining: Int { max(0, 3 - Int(elapsed / 86400)) }
-    var isUnlocked: Bool { isTrialActive || isPurchased }
-    var displayPrice: String { product?.displayPrice ?? "€2.99" }
-
     // MARK: - Init
 
     init() {
-        if let stored = UserDefaults.standard.object(forKey: Self.firstLaunchKey) as? Date {
-            firstLaunchDate = stored
-        } else {
-            let now = Date()
-            UserDefaults.standard.set(now, forKey: Self.firstLaunchKey)
-            firstLaunchDate = now
-        }
-
         transactionListener = Task.detached(priority: .background) { [weak self] in
             for await result in Transaction.updates {
                 guard let self else { return }
-                if case .verified(let tx) = result, tx.productID == StoreKitManager.lifetimeProductID {
-                    await MainActor.run { self.isPurchased = true }
+                if case .verified(let tx) = result {
+                    await self.handleTransaction(tx)
                     await tx.finish()
                 }
             }
@@ -46,7 +43,7 @@ final class StoreKitManager {
 
         Task { [weak self] in
             await self?.loadProducts()
-            await self?.checkPurchaseStatus()
+            await self?.updatePurchaseStatus()
         }
     }
 
@@ -54,38 +51,83 @@ final class StoreKitManager {
         transactionListener?.cancel()
     }
 
-    // MARK: - StoreKit
+    // MARK: - Products
 
     @MainActor
     func loadProducts() async {
         do {
-            let products = try await Product.products(for: [Self.lifetimeProductID])
-            product = products.first
-        } catch {}
+            let products = try await Product.products(for: [Self.lifetimeProductID, Self.yearlyProductID])
+            for product in products {
+                if product.id == Self.lifetimeProductID {
+                    lifetimeProduct = product
+                } else if product.id == Self.yearlyProductID {
+                    yearlyProduct = product
+                }
+            }
+        } catch {
+            purchaseError = "Failed to load products."
+        }
     }
 
+    // MARK: - Entitlements
+
     @MainActor
-    func checkPurchaseStatus() async {
+    func updatePurchaseStatus() async {
+        isLifetimePurchased = false
+        isSubscriptionActive = false
+        isTrialActive = false
+        subscriptionExpiryDate = nil
+
         for await result in Transaction.currentEntitlements {
-            if case .verified(let tx) = result, tx.productID == Self.lifetimeProductID {
-                isPurchased = true
-                return
+            if case .verified(let tx) = result {
+                handleTransaction(tx)
             }
         }
     }
 
     @MainActor
-    func purchase() async {
+    private func handleTransaction(_ transaction: Transaction) {
+        if transaction.productID == Self.lifetimeProductID {
+            isLifetimePurchased = true
+            return
+        }
+
+        guard transaction.productID == Self.yearlyProductID,
+              let expirationDate = transaction.expirationDate,
+              expirationDate > Date()
+        else { return }
+
+        isSubscriptionActive = true
+        subscriptionExpiryDate = expirationDate
+
+        if transaction.offerType == .introductory {
+            isTrialActive = true
+        }
+    }
+
+    // MARK: - Purchase
+
+    @MainActor
+    func purchase(_ productID: String) async {
+        let product: Product?
+        if productID == Self.lifetimeProductID {
+            product = lifetimeProduct
+        } else {
+            product = yearlyProduct
+        }
+
         guard let product else { return }
+
         isLoading = true
         purchaseError = nil
         defer { isLoading = false }
+
         do {
             let result = try await product.purchase()
             switch result {
             case .success(let verification):
                 if case .verified(let tx) = verification {
-                    isPurchased = true
+                    handleTransaction(tx)
                     await tx.finish()
                 }
             case .userCancelled, .pending:
@@ -98,14 +140,17 @@ final class StoreKitManager {
         }
     }
 
+    // MARK: - Restore
+
     @MainActor
     func restorePurchases() async {
         isLoading = true
         purchaseError = nil
         defer { isLoading = false }
+
         do {
             try await AppStore.sync()
-            await checkPurchaseStatus()
+            await updatePurchaseStatus()
         } catch {
             purchaseError = error.localizedDescription
         }

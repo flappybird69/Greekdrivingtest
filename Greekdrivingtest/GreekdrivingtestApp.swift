@@ -14,22 +14,24 @@ import UserNotifications
 struct GreekdrivingtestApp: App {
     @State private var langManager = LanguageManager()
     @State private var storeKit = StoreKitManager()
+    @State private var showSplash = true
 
     init() {}
 
     let container: ModelContainer = {
         let schema = Schema([TestResult.self, BookmarkedQuestion.self, DifficultQuestion.self])
 
-        // Create a sub‑directory for app data if it doesn’t exist
-        let appSupport = FileManager.default.urls(
+        guard let appSupport = FileManager.default.urls(
             for: .applicationSupportDirectory,
             in: .userDomainMask
-        ).first!
+        ).first else {
+            return try! ModelContainer(for: schema, configurations: ModelConfiguration(isStoredInMemoryOnly: true))
+        }
+
         let storeURL = appSupport
             .appendingPathComponent("Greekdrivingtest")
             .appendingPathComponent("default.store")
 
-        // Ensure the parent directory exists
         let directory = storeURL.deletingLastPathComponent()
         try? FileManager.default.createDirectory(
             at: directory,
@@ -40,16 +42,28 @@ struct GreekdrivingtestApp: App {
             let config = ModelConfiguration(url: storeURL, cloudKitDatabase: .automatic)
             return try ModelContainer(for: schema, configurations: config)
         } catch {
-            fatalError("SwiftData error: \(error)")
+            return try! ModelContainer(for: schema, configurations: ModelConfiguration(isStoredInMemoryOnly: true))
         }
     }()
 
     var body: some Scene {
         WindowGroup {
-            ContentView()
-                .environment(langManager)
-                .environment(storeKit)
-                .onAppear { requestPushPermission() }
+            if showSplash {
+                SplashScreenView {
+                    withAnimation(.easeOut(duration: 0.4)) {
+                        showSplash = false
+                    }
+                }
+                .transition(.opacity)
+                .preferredColorScheme(.dark)
+            } else {
+                ContentView()
+                    .environment(langManager)
+                    .environment(storeKit)
+                    .onAppear { requestPushPermission() }
+                    .transition(.opacity)
+                    .preferredColorScheme(.dark)
+            }
         }
         .modelContainer(container)
     }
