@@ -118,13 +118,71 @@ struct PaywallView: View {
     // MARK: - Subscription Option
 
     private var subscriptionOption: some View {
-        VStack(spacing: 14) {
-            purchaseButton(
-                title: lang.t("Ξεκινήστε Δωρεάν Δοκιμή 3 Ημερών", "Start 3-Day Free Trial"),
-                subtitle: lang.t("Στη συνέχεια \(store.yearlyDisplayPrice)/έτος · Ακύρωση οποτεδήποτε", "Then \(store.yearlyDisplayPrice)/year · Cancel anytime"),
-                isLoading: store.isLoading,
-                action: { Task { await store.purchase(StoreKitManager.yearlyProductID) } }
-            )
+        VStack(spacing: 0) {
+            VStack(spacing: 8) {
+                HStack(spacing: 8) {
+                    Image(systemName: "crown.fill")
+                        .font(.caption)
+                        .foregroundStyle(Color.greekGold)
+                    Text(lang.t("ΕΤΗΣΙΑ ΣΥΝΔΡΟΜΗ", "YEARLY SUBSCRIPTION"))
+                        .font(.caption.bold())
+                        .foregroundStyle(.white.opacity(0.5))
+                        .tracking(1)
+                }
+
+                Text(lang.t("3 Ημέρες Δωρεάν", "3 Days Free"))
+                    .font(.system(size: 28, weight: .bold, design: .rounded))
+                    .foregroundStyle(.white)
+
+                Text(lang.t("Μετά \(store.yearlyDisplayPrice)/έτος", "Then \(store.yearlyDisplayPrice)/year"))
+                    .font(.title3.weight(.semibold))
+                    .foregroundStyle(.white.opacity(0.7))
+            }
+
+            Divider()
+                .background(.white.opacity(0.15))
+                .padding(.vertical, 14)
+
+            VStack(spacing: 6) {
+                disclosureRow(lang.t("Διάρκεια δοκιμής", "Trial period"),
+                              lang.t("3 ημέρες δωρεάν", "3 days free"))
+                disclosureRow(lang.t("Τιμή μετά τη δοκιμή", "Price after trial"),
+                              "\(store.yearlyDisplayPrice)/\(lang.t("έτος", "year"))")
+                disclosureRow(lang.t("Ανανέωση", "Renewal"),
+                              lang.t("Αυτόματη, ακύρωση οποτεδήποτε", "Auto-renew, cancel anytime"))
+                disclosureRow(lang.t("Περίοδος χρέωσης", "Billing period"),
+                              lang.t("1 έτος", "1 year"))
+            }
+
+            Button {
+                Task { await store.purchase(StoreKitManager.yearlyProductID) }
+            } label: {
+                ZStack {
+                    if store.isLoading {
+                        ProgressView().tint(Color.greekDark)
+                    } else {
+                        HStack(spacing: 10) {
+                            Image(systemName: "lock.open.fill").font(.headline.bold())
+                            Text(lang.t("Ξεκινήστε Δωρεάν Δοκιμή", "Start Free Trial"))
+                                .font(.headline.bold())
+                        }
+                        .foregroundStyle(Color.greekDark)
+                    }
+                }
+                .frame(maxWidth: .infinity)
+                .frame(height: 54)
+                .background(
+                    LinearGradient(
+                        colors: [Color.greekGold, Color.greekGold.opacity(0.80)],
+                        startPoint: .topLeading,
+                        endPoint: .bottomTrailing
+                    )
+                )
+                .clipShape(Capsule())
+                .shadow(color: Color.greekGold.opacity(0.55), radius: 18, x: 0, y: 8)
+            }
+            .disabled(store.isLoading)
+            .padding(.top, 4)
         }
         .padding(20)
         .background(.ultraThinMaterial.opacity(0.6))
@@ -133,6 +191,18 @@ struct PaywallView: View {
             RoundedRectangle(cornerRadius: 20)
                 .stroke(Color.greekGold.opacity(0.35), lineWidth: 1)
         )
+    }
+
+    private func disclosureRow(_ label: String, _ value: String) -> some View {
+        HStack {
+            Text(label)
+                .font(.caption2)
+                .foregroundStyle(.white.opacity(0.45))
+            Spacer()
+            Text(value)
+                .font(.caption2.bold())
+                .foregroundStyle(.white.opacity(0.8))
+        }
     }
 
     // MARK: - Lifetime Option
@@ -144,9 +214,16 @@ struct PaywallView: View {
             HStack {
                 Image(systemName: "infinity")
                     .font(.system(size: 16, weight: .semibold))
-                Text(lang.t("Ισόβια Πρόσβαση — \(store.lifetimeDisplayPrice)", "Lifetime Access — \(store.lifetimeDisplayPrice)"))
-                    .font(.headline.weight(.semibold))
+                VStack(alignment: .leading, spacing: 2) {
+                    Text(lang.t("Ισόβια Πρόσβαση", "Lifetime Access"))
+                        .font(.headline.weight(.semibold))
+                    Text(lang.t("Εφάπαξ πληρωμή, χωρίς συνδρομή", "One-time payment, no subscription"))
+                        .font(.caption)
+                        .foregroundStyle(.white.opacity(0.5))
+                }
                 Spacer()
+                Text(store.lifetimeDisplayPrice)
+                    .font(.title3.weight(.bold))
             }
             .foregroundStyle(.white)
             .padding(.horizontal, 20).padding(.vertical, 16)
@@ -164,46 +241,6 @@ struct PaywallView: View {
                 .background(Color.greekGold.opacity(0.15))
                 .clipShape(Capsule())
                 .padding(8)
-        }
-    }
-
-    // MARK: - Helpers
-
-    @ViewBuilder
-    private func purchaseButton(title: String, subtitle: String, isLoading: Bool, action: @escaping () -> Void) -> some View {
-        VStack(spacing: 6) {
-            Button(action: action) {
-                ZStack {
-                    if isLoading {
-                        ProgressView().tint(Color.greekDark)
-                    } else {
-                        HStack(spacing: 10) {
-                            Image(systemName: "lock.open.fill").font(.headline.bold())
-                            Text(title)
-                                .font(.headline.bold())
-                                .multilineTextAlignment(.center)
-                        }
-                        .foregroundStyle(Color.greekDark)
-                    }
-                }
-                .frame(maxWidth: .infinity)
-                .frame(height: 56)
-                .background(
-                    LinearGradient(
-                        colors: [Color.greekGold, Color.greekGold.opacity(0.80)],
-                        startPoint: .topLeading,
-                        endPoint: .bottomTrailing
-                    )
-                )
-                .clipShape(Capsule())
-                .shadow(color: Color.greekGold.opacity(0.55), radius: 18, x: 0, y: 8)
-            }
-            .disabled(isLoading)
-
-            Text(subtitle)
-                .font(.caption)
-                .foregroundStyle(.white.opacity(0.55))
-                .multilineTextAlignment(.center)
         }
     }
 
@@ -233,24 +270,25 @@ struct PaywallView: View {
     // MARK: - Footnotes
 
     private var footnotes: some View {
-        VStack(spacing: 8) {
+        VStack(spacing: 10) {
             Text(lang.t(
-                "Ετήσια συνδρομή \(store.yearlyDisplayPrice)/έτος. Δωρεάν δοκιμή 3 ημερών για νέους συνδρομητές. Ανανεώνεται αυτόματα εκτός αν ακυρωθεί 24 ώρες πριν τη λήξη. Χρέωση μέσω Apple ID. Ακύρωση από Ρυθμίσεις → Συνδρομές.",
-                "Yearly subscription \(store.yearlyDisplayPrice)/year. 3-day free trial for new subscribers. Auto-renews unless cancelled 24h before renewal. Charged to your Apple ID. Cancel in Settings → Subscriptions."
+                "Η Ετήσια Συνδρομή (\(store.yearlyDisplayPrice)/έτος) περιλαμβάνει δωρεάν δοκιμή 3 ημερών. Μετά τη δοκιμή η συνδρομή ανανεώνεται αυτόματα εκτός αν ακυρωθεί τουλάχιστον 24 ώρες πριν τη λήξη. Η χρέωση γίνεται μέσω του Apple ID σας. Η διαχείριση και ακύρωση των συνδρομών γίνεται από τις Ρυθμίσεις του λογαριασμού σας στο App Store.",
+                "Yearly Subscription (\(store.yearlyDisplayPrice)/year) includes a 3-day free trial. After the trial, the subscription auto-renews unless cancelled at least 24 hours before renewal. Payment is charged to your Apple ID. Manage and cancel subscriptions in your App Store account Settings."
             ))
             .font(.caption2)
-            .foregroundStyle(.white.opacity(0.28))
+            .foregroundStyle(.white.opacity(0.30))
             .multilineTextAlignment(.center)
-            .lineSpacing(2)
+            .lineSpacing(3)
 
-            HStack(spacing: 16) {
-                Link(lang.t("Όροι Χρήσης", "Terms of Use"),
+            HStack(spacing: 20) {
+                Link(lang.t("Όροι Χρήσης (EULA)", "Terms of Use (EULA)"),
                      destination: URL(string: "https://www.apple.com/legal/internet-services/itunes/dev/stdeula/")!)
                 Link(lang.t("Πολιτική Απορρήτου", "Privacy Policy"),
                      destination: URL(string: "https://www.termsfeed.com/live/your-privacy-policy-url")!)
             }
             .font(.caption2.bold())
             .foregroundStyle(.white.opacity(0.45))
+            .underline()
         }
     }
 }
