@@ -284,7 +284,7 @@ struct PaywallView: View {
                 Link(lang.t("Όροι Χρήσης (EULA)", "Terms of Use (EULA)"),
                      destination: URL(string: "https://www.apple.com/legal/internet-services/itunes/dev/stdeula/")!)
                 Link(lang.t("Πολιτική Απορρήτου", "Privacy Policy"),
-                     destination: URL(string: "https://www.termsfeed.com/live/your-privacy-policy-url")!)
+                     destination: URL(string: "https://sites.google.com/view/greekdrivingtest/home")!)
             }
             .font(.caption2.bold())
             .foregroundStyle(.white.opacity(0.45))
