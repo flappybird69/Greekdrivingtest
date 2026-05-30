@@ -42,6 +42,8 @@ struct PaywallView: View {
                 .frame(maxWidth: 540)
                 .frame(maxWidth: .infinity, alignment: .center)
             }
+            .scrollBounceBehavior(.basedOnSize)
+            .scrollIndicators(.hidden)
         }
     }
 
