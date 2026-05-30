@@ -31,9 +31,11 @@ struct ContentView: View {
             .tint(.greekBlue)
             .fullScreenCover(isPresented: Binding(get: { !hasSeenOnboarding }, set: { _ in })) {
                 OnboardingView()
+                    .interactiveDismissDisabled(true)
             }
             .fullScreenCover(isPresented: Binding(get: { hasSeenOnboarding && !store.isUnlocked }, set: { _ in })) {
                 PaywallView()
+                    .interactiveDismissDisabled(true)
             }
             .onAppear { updateStreak() }
         }
