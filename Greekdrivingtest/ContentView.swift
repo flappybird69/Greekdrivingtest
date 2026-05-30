@@ -9,8 +9,11 @@ struct ContentView: View {
     @AppStorage("streakCount") private var streakCount = 0
     @AppStorage("streakLastTimestamp") private var streakLastTimestamp: Double = 0
 
+    private var showOnboarding: Bool { !hasSeenOnboarding }
+    private var showPaywall: Bool { hasSeenOnboarding && !store.isUnlocked }
+
     var body: some View {
-        VStack(spacing: 0) {
+        ZStack {
             TabView(selection: $selectedTab) {
                 HomeView(selectedTab: $selectedTab)
                     .tabItem { Label(lang.t("Αρχική", "Home"), systemImage: "house.fill") }
@@ -29,16 +32,22 @@ struct ContentView: View {
                     .tag(4)
             }
             .tint(.greekBlue)
-            .fullScreenCover(isPresented: Binding(get: { !hasSeenOnboarding }, set: { _ in })) {
+
+            if showOnboarding {
                 OnboardingView()
-                    .interactiveDismissDisabled(true)
+                    .transition(.opacity)
+                    .zIndex(1)
             }
-            .fullScreenCover(isPresented: Binding(get: { hasSeenOnboarding && !store.isUnlocked }, set: { _ in })) {
+
+            if showPaywall {
                 PaywallView()
-                    .interactiveDismissDisabled(true)
+                    .transition(.opacity)
+                    .zIndex(2)
             }
-            .onAppear { updateStreak() }
         }
+        .animation(.easeInOut(duration: 0.25), value: showOnboarding)
+        .animation(.easeInOut(duration: 0.25), value: showPaywall)
+        .onAppear { updateStreak() }
     }
 
     private func updateStreak() {
