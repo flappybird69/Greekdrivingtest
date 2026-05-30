@@ -151,6 +151,7 @@ struct OnboardingView: View {
                         }
                     }
                 }
+                .iPadReadableWidth(560)
 
                 Spacer()
 

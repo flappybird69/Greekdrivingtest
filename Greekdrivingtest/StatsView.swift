@@ -23,6 +23,7 @@ struct StatsView: View {
                         }
                         .padding(.horizontal, 16)
                         .padding(.bottom, 24)
+                        .iPadReadableWidth()
                     }
                 }
             }

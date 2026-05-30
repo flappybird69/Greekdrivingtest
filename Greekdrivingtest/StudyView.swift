@@ -655,6 +655,7 @@ struct IntensivePracticeView: View {
                         speedChallengeCard
                     }
                     .padding(16)
+                    .iPadReadableWidth()
                 }
             }
         }
@@ -1104,6 +1105,7 @@ struct SpeedRoundView: View {
                 Spacer(minLength: 20)
             }
             .padding(.vertical, 12)
+            .iPadReadableWidth()
         }
     }
 
@@ -1363,6 +1365,7 @@ struct StudyView: View {
                     }
                 }
                 .padding(.vertical, 4)
+                .iPadReadableWidth()
             }
         }
     }

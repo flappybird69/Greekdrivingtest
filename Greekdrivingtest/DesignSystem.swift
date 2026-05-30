@@ -35,6 +35,13 @@ extension View {
     func cardStyle(cornerRadius: CGFloat = 16) -> some View {
         modifier(CardModifier(cornerRadius: cornerRadius))
     }
+
+    /// Constrains content width for readable layouts on iPad while leaving iPhone untouched.
+    func iPadReadableWidth(_ maxWidth: CGFloat = 700) -> some View {
+        self
+            .frame(maxWidth: maxWidth)
+            .frame(maxWidth: .infinity, alignment: .center)
+    }
 }
 
 // MARK: - Category Color Helper

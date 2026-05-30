@@ -167,6 +167,7 @@ struct TestView: View {
                     .padding(.horizontal, 16)
                     .padding(.bottom, 36)
                 }
+                .iPadReadableWidth()
             }
         }
     }
@@ -216,6 +217,7 @@ struct TestView: View {
                         }
                         Spacer(minLength: 110)
                     }
+                    .iPadReadableWidth()
                 }
                 .id(q.id)
 
@@ -590,6 +592,7 @@ struct TestView: View {
 
                         Spacer(minLength: 40)
                     }
+                    .iPadReadableWidth()
                 }
             }
         }

@@ -29,6 +29,7 @@ struct HomeView: View {
                     }
                     .padding(.horizontal, 16)
                     .padding(.top, 8)
+                    .iPadReadableWidth()
                 }
             }
             .navigationBarHidden(true)
