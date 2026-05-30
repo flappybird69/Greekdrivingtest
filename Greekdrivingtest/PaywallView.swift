@@ -25,16 +25,22 @@ struct PaywallView: View {
                     Spacer(minLength: 24)
                     featuresCard
                     Spacer(minLength: 24)
+                    agreementNotice
+                    Spacer(minLength: 16)
                     subscriptionOption
                     Spacer(minLength: 12)
                     lifetimeOption
-                    Spacer(minLength: 24)
+                    Spacer(minLength: 20)
+                    legalLinks
+                    Spacer(minLength: 20)
                     restoreSection
-                    Spacer(minLength: 32)
+                    Spacer(minLength: 28)
                     footnotes
                     Spacer(minLength: 24)
                 }
                 .padding(.horizontal, 24)
+                .frame(maxWidth: 540)
+                .frame(maxWidth: .infinity, alignment: .center)
             }
         }
     }
@@ -267,28 +273,55 @@ struct PaywallView: View {
         }
     }
 
+    // MARK: - Agreement Notice (shown above purchase buttons)
+
+    private var agreementNotice: some View {
+        Text(lang.t(
+            "Συνεχίζοντας, συμφωνείτε με τους Όρους Χρήσης (EULA) και την Πολιτική Απορρήτου.",
+            "By continuing, you agree to the Terms of Use (EULA) and Privacy Policy."
+        ))
+        .font(.caption)
+        .foregroundStyle(.white.opacity(0.75))
+        .multilineTextAlignment(.center)
+        .lineSpacing(2)
+        .padding(.horizontal, 8)
+    }
+
+    // MARK: - Legal Links (prominent, between purchase buttons and restore)
+
+    private var legalLinks: some View {
+        HStack(spacing: 28) {
+            Link(destination: URL(string: "https://www.apple.com/legal/internet-services/itunes/dev/stdeula/")!) {
+                HStack(spacing: 4) {
+                    Image(systemName: "doc.text.fill")
+                        .font(.caption2)
+                    Text(lang.t("Όροι Χρήσης", "Terms of Use"))
+                        .underline()
+                }
+            }
+            Link(destination: URL(string: "https://sites.google.com/view/greekdrivingtest/home")!) {
+                HStack(spacing: 4) {
+                    Image(systemName: "hand.raised.fill")
+                        .font(.caption2)
+                    Text(lang.t("Πολιτική Απορρήτου", "Privacy Policy"))
+                        .underline()
+                }
+            }
+        }
+        .font(.subheadline.weight(.semibold))
+        .foregroundStyle(.white)
+    }
+
     // MARK: - Footnotes
 
     private var footnotes: some View {
-        VStack(spacing: 10) {
-            Text(lang.t(
-                "Η Ετήσια Συνδρομή (\(store.yearlyDisplayPrice)/έτος) περιλαμβάνει δωρεάν δοκιμή 3 ημερών. Μετά τη δοκιμή η συνδρομή ανανεώνεται αυτόματα εκτός αν ακυρωθεί τουλάχιστον 24 ώρες πριν τη λήξη. Η χρέωση γίνεται μέσω του Apple ID σας. Η διαχείριση και ακύρωση των συνδρομών γίνεται από τις Ρυθμίσεις του λογαριασμού σας στο App Store.",
-                "Yearly Subscription (\(store.yearlyDisplayPrice)/year) includes a 3-day free trial. After the trial, the subscription auto-renews unless cancelled at least 24 hours before renewal. Payment is charged to your Apple ID. Manage and cancel subscriptions in your App Store account Settings."
-            ))
-            .font(.caption2)
-            .foregroundStyle(.white.opacity(0.30))
-            .multilineTextAlignment(.center)
-            .lineSpacing(3)
-
-            HStack(spacing: 20) {
-                Link(lang.t("Όροι Χρήσης (EULA)", "Terms of Use (EULA)"),
-                     destination: URL(string: "https://www.apple.com/legal/internet-services/itunes/dev/stdeula/")!)
-                Link(lang.t("Πολιτική Απορρήτου", "Privacy Policy"),
-                     destination: URL(string: "https://sites.google.com/view/greekdrivingtest/home")!)
-            }
-            .font(.caption2.bold())
-            .foregroundStyle(.white.opacity(0.45))
-            .underline()
-        }
+        Text(lang.t(
+            "Η Ετήσια Συνδρομή (\(store.yearlyDisplayPrice)/έτος) περιλαμβάνει δωρεάν δοκιμή 3 ημερών. Μετά τη δοκιμή η συνδρομή ανανεώνεται αυτόματα εκτός αν ακυρωθεί τουλάχιστον 24 ώρες πριν τη λήξη. Η χρέωση γίνεται μέσω του Apple ID σας. Η διαχείριση και ακύρωση των συνδρομών γίνεται από τις Ρυθμίσεις του λογαριασμού σας στο App Store.",
+            "Yearly Subscription (\(store.yearlyDisplayPrice)/year) includes a 3-day free trial. After the trial, the subscription auto-renews unless cancelled at least 24 hours before renewal. Payment is charged to your Apple ID. Manage and cancel subscriptions in your App Store account Settings."
+        ))
+        .font(.caption2)
+        .foregroundStyle(.white.opacity(0.35))
+        .multilineTextAlignment(.center)
+        .lineSpacing(3)
     }
 }
