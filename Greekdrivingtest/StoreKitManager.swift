@@ -14,6 +14,7 @@ final class StoreKitManager {
     private(set) var purchaseError: String?
     private(set) var isTrialActive = false
     private(set) var subscriptionExpiryDate: Date?
+    private(set) var productsLoaded = false
 
     var isUnlocked: Bool { isLifetimePurchased || isSubscriptionActive }
 
@@ -64,8 +65,11 @@ final class StoreKitManager {
                     yearlyProduct = product
                 }
             }
+            productsLoaded = true
+            purchaseError = nil
         } catch {
-            purchaseError = "Failed to load products."
+            purchaseError = "Failed to load products. Check your internet connection."
+            productsLoaded = false
         }
     }
 
@@ -116,7 +120,11 @@ final class StoreKitManager {
             product = yearlyProduct
         }
 
-        guard let product else { return }
+        guard let product else {
+            purchaseError = "Product unavailable. Retrying..."
+            await loadProducts()
+            return
+        }
 
         isLoading = true
         purchaseError = nil
@@ -138,6 +146,12 @@ final class StoreKitManager {
         } catch {
             purchaseError = error.localizedDescription
         }
+    }
+
+    @MainActor
+    func retryLoadProducts() async {
+        purchaseError = nil
+        await loadProducts()
     }
 
     // MARK: - Restore

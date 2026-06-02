@@ -122,7 +122,11 @@ struct SettingsView: View {
                             HStack {
                                 Image(systemName: "checkmark.seal.fill")
                                     .foregroundStyle(Color.passGreen).frame(width: 28)
-                                Text(lang.t("Ισόβια Πρόσβαση", "Lifetime Access Unlocked"))
+                                VStack(alignment: .leading, spacing: 2) {
+                                    Text(lang.t("Ισόβια Πρόσβαση", "Lifetime Access Unlocked"))
+                                    Text(lang.t("Εφάπαξ πληρωμή, πλήρης πρόσβαση για πάντα", "One-time payment, full access forever"))
+                                        .font(.caption).foregroundStyle(.secondary)
+                                }
                                 Spacer()
                                 Image(systemName: "checkmark")
                                     .foregroundStyle(Color.passGreen).font(.subheadline.bold())
@@ -137,6 +141,8 @@ struct SettingsView: View {
                                         let d = store.trialDaysRemaining
                                         Text(lang.t("\(d) \(d == 1 ? "μέρα" : "μέρες") απομένουν", "\(d) \(d == 1 ? "day" : "days") remaining"))
                                             .font(.caption).foregroundStyle(.secondary)
+                                        Text(lang.t("Μετά \(store.yearlyDisplayPrice)/έτος", "Then \(store.yearlyDisplayPrice)/year"))
+                                            .font(.caption2).foregroundStyle(.secondary)
                                     }
                                     Spacer()
                                 }
@@ -146,9 +152,11 @@ struct SettingsView: View {
                                         .foregroundStyle(Color.greekBlue).frame(width: 28)
                                     VStack(alignment: .leading, spacing: 2) {
                                         Text(lang.t("Ενεργή Συνδρομή", "Subscription Active"))
+                                        Text("\(store.yearlyDisplayPrice)/\(lang.t("έτος", "year"))")
+                                            .font(.caption).foregroundStyle(.secondary)
                                         if let expiry = store.subscriptionExpiryDate {
-                                            Text(expiry, style: .date)
-                                                .font(.caption).foregroundStyle(.secondary)
+                                            Text(lang.t("Λήξη: ", "Expires: ") + expiry.formatted(date: .abbreviated, time: .omitted))
+                                                .font(.caption2).foregroundStyle(.secondary)
                                         }
                                     }
                                     Spacer()
@@ -164,7 +172,7 @@ struct SettingsView: View {
                                     VStack(alignment: .leading, spacing: 2) {
                                         Text(lang.t("Δωρεάν Δοκιμή 3 Ημερών", "Start 3-Day Free Trial"))
                                             .foregroundStyle(Color.greekBlue).fontWeight(.semibold)
-                                        Text(lang.t("Μετά \(store.yearlyDisplayPrice)/έτος", "Then \(store.yearlyDisplayPrice)/year"))
+                                        Text(lang.t("Μετά \(store.yearlyDisplayPrice)/έτος · Ετήσια συνδρομή", "Then \(store.yearlyDisplayPrice)/year · Yearly subscription"))
                                             .font(.caption).foregroundStyle(.secondary)
                                     }
                                     Spacer()
@@ -184,7 +192,7 @@ struct SettingsView: View {
                                     VStack(alignment: .leading, spacing: 2) {
                                         Text(lang.t("Ισόβια — \(store.lifetimeDisplayPrice)", "Lifetime — \(store.lifetimeDisplayPrice)"))
                                             .foregroundStyle(Color.greekGold).fontWeight(.semibold)
-                                        Text(lang.t("Εφάπαξ αγορά", "One-time purchase"))
+                                        Text(lang.t("Εφάπαξ πληρωμή, χωρίς συνδρομή", "One-time payment, no subscription"))
                                             .font(.caption).foregroundStyle(.secondary)
                                     }
                                     Spacer()
@@ -220,16 +228,54 @@ struct SettingsView: View {
                     } header: {
                         Text(lang.t("Pro Πρόσβαση", "Pro Access"))
                     } footer: {
-                        if store.isLifetimePurchased {
-                            Text(lang.t("Πλήρης πρόσβαση για πάντα.", "Full access forever."))
-                        } else if store.isSubscriptionActive {
-                            Text(lang.t("Διαχειριστείτε τη συνδρομή σας από τις Ρυθμίσεις Apple ID.", "Manage your subscription in Apple ID Settings."))
-                        } else {
-                            Text(lang.t(
-                                "Δοκιμή 3 ημερών, μετά \(store.yearlyDisplayPrice)/έτος ή \(store.lifetimeDisplayPrice) εφάπαξ.",
-                                "3-day trial, then \(store.yearlyDisplayPrice)/year or \(store.lifetimeDisplayPrice) once."
-                            ))
+                        VStack(alignment: .leading, spacing: 6) {
+                            if store.isLifetimePurchased {
+                                Text(lang.t("Πλήρης πρόσβαση για πάντα.", "Full access forever."))
+                            } else if store.isSubscriptionActive {
+                                Text(lang.t("Διαχειριστείτε τη συνδρομή σας από τις Ρυθμίσεις Apple ID.", "Manage your subscription in Apple ID Settings."))
+                            } else {
+                                Text(lang.t(
+                                    "Δοκιμή 3 ημερών, μετά \(store.yearlyDisplayPrice)/έτος ή \(store.lifetimeDisplayPrice) εφάπαξ.",
+                                    "3-day trial, then \(store.yearlyDisplayPrice)/year or \(store.lifetimeDisplayPrice) once."
+                                ))
+                            }
                         }
+                    }
+
+                    // Legal & Compliance
+                    Section {
+                        Link(destination: URL(string: "https://www.apple.com/legal/internet-services/itunes/dev/stdeula/")!) {
+                            HStack {
+                                Image(systemName: "doc.text.fill").frame(width: 28)
+                                    .foregroundStyle(Color.primary)
+                                Text(lang.t("Όροι Χρήσης (EULA)", "Terms of Use (EULA)"))
+                                Spacer()
+                                Image(systemName: "arrow.up.right")
+                                    .font(.caption).foregroundStyle(.secondary)
+                            }
+                        }
+                        Link(destination: URL(string: "https://sites.google.com/view/greekdrivingtest/home")!) {
+                            HStack {
+                                Image(systemName: "hand.raised.fill").frame(width: 28)
+                                    .foregroundStyle(Color.primary)
+                                Text(lang.t("Πολιτική Απορρήτου", "Privacy Policy"))
+                                Spacer()
+                                Image(systemName: "arrow.up.right")
+                                    .font(.caption).foregroundStyle(.secondary)
+                            }
+                        }
+                        Link(destination: URL(string: "https://www.apple.com/legal/privacy/data/")!) {
+                            HStack {
+                                Image(systemName: "apple.logo").frame(width: 28)
+                                    .foregroundStyle(Color.primary)
+                                Text(lang.t("Πολιτική Απορρήτου Apple", "Apple Privacy Policy"))
+                                Spacer()
+                                Image(systemName: "arrow.up.right")
+                                    .font(.caption).foregroundStyle(.secondary)
+                            }
+                        }
+                    } header: {
+                        Text(lang.t("Νομικά", "Legal"))
                     }
 
                     // Clear history
