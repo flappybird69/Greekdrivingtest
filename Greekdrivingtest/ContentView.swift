@@ -8,8 +8,10 @@ struct ContentView: View {
     @AppStorage("hasSeenOnboarding") private var hasSeenOnboarding = false
     @AppStorage("streakCount") private var streakCount = 0
     @AppStorage("streakLastTimestamp") private var streakLastTimestamp: Double = 0
+    @AppStorage("debug_skip_paywall") private var debugSkipPaywall = false
 
-    private var showPaywall: Bool { hasSeenOnboarding && !store.isUnlocked }
+    private var showPaywall: Bool { !debugSkipPaywall && hasSeenOnboarding && !store.isUnlocked }
+    private var showOnboarding: Bool { !hasSeenOnboarding }
 
     var body: some View {
         ZStack {
