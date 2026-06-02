@@ -15,6 +15,7 @@ struct GreekdrivingtestApp: App {
     @State private var langManager = LanguageManager()
     @State private var storeKit = StoreKitManager()
     @State private var showSplash = true
+    @AppStorage("useDarkMode") private var useDarkMode = true
 
     init() {}
 
@@ -55,14 +56,14 @@ struct GreekdrivingtestApp: App {
                     }
                 }
                 .transition(.opacity)
-                .preferredColorScheme(.dark)
+                .preferredColorScheme(useDarkMode ? .dark : .light)
             } else {
                 ContentView()
                     .environment(langManager)
                     .environment(storeKit)
                     .onAppear { requestPushPermission() }
                     .transition(.opacity)
-                    .preferredColorScheme(.dark)
+                    .preferredColorScheme(useDarkMode ? .dark : .light)
             }
         }
         .modelContainer(container)

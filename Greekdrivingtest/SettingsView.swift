@@ -9,6 +9,7 @@ struct SettingsView: View {
     @Query private var results: [TestResult]
     @State private var showingClearConfirm = false
     @AppStorage("userName") private var userName = ""
+    @AppStorage("useDarkMode") private var useDarkMode = true
     @State private var nameInput = ""
 
     var body: some View {
@@ -66,6 +67,20 @@ struct SettingsView: View {
                         }
                     } header: {
                         Text(lang.t("Γλώσσα", "Language"))
+                    }
+
+                    // Appearance
+                    Section {
+                        Toggle(isOn: $useDarkMode) {
+                            HStack {
+                                Image(systemName: useDarkMode ? "moon.fill" : "sun.max.fill")
+                                    .foregroundStyle(useDarkMode ? Color.primary : Color.catOrange)
+                                    .frame(width: 28)
+                                Text(lang.t("Σκοτεινή Λειτουργία", "Dark Mode"))
+                            }
+                        }
+                    } header: {
+                        Text(lang.t("Εμφάνιση", "Appearance"))
                     }
 
                     // Exam Info
@@ -142,7 +157,7 @@ struct SettingsView: View {
                                         Text(lang.t("\(d) \(d == 1 ? "μέρα" : "μέρες") απομένουν", "\(d) \(d == 1 ? "day" : "days") remaining"))
                                             .font(.caption).foregroundStyle(.secondary)
                                         Text(lang.t("Μετά \(store.yearlyDisplayPrice)/έτος", "Then \(store.yearlyDisplayPrice)/year"))
-                                            .font(.caption2).foregroundStyle(.secondary)
+                                            .font(.caption2).foregroundStyle(.orange)
                                     }
                                     Spacer()
                                 }
@@ -168,12 +183,12 @@ struct SettingsView: View {
                             } label: {
                                 HStack {
                                     Image(systemName: "lock.open.fill")
-                                        .foregroundStyle(Color.greekBlue).frame(width: 28)
+                                        .foregroundStyle(Color.greekGold).frame(width: 28)
                                     VStack(alignment: .leading, spacing: 2) {
                                         Text(lang.t("Δωρεάν Δοκιμή 3 Ημερών", "Start 3-Day Free Trial"))
-                                            .foregroundStyle(Color.greekBlue).fontWeight(.semibold)
+                                            .foregroundStyle(Color.greekGold).fontWeight(.semibold)
                                         Text(lang.t("Μετά \(store.yearlyDisplayPrice)/έτος · Ετήσια συνδρομή", "Then \(store.yearlyDisplayPrice)/year · Yearly subscription"))
-                                            .font(.caption).foregroundStyle(.secondary)
+                                            .font(.caption).foregroundStyle(.orange)
                                     }
                                     Spacer()
                                     if store.isLoading {
@@ -193,7 +208,7 @@ struct SettingsView: View {
                                         Text(lang.t("Ισόβια — \(store.lifetimeDisplayPrice)", "Lifetime — \(store.lifetimeDisplayPrice)"))
                                             .foregroundStyle(Color.greekGold).fontWeight(.semibold)
                                         Text(lang.t("Εφάπαξ πληρωμή, χωρίς συνδρομή", "One-time payment, no subscription"))
-                                            .font(.caption).foregroundStyle(.secondary)
+                                            .font(.caption).foregroundStyle(.orange)
                                     }
                                     Spacer()
                                     if store.isLoading {
@@ -247,31 +262,34 @@ struct SettingsView: View {
                         Link(destination: URL(string: "https://www.apple.com/legal/internet-services/itunes/dev/stdeula/")!) {
                             HStack {
                                 Image(systemName: "doc.text.fill").frame(width: 28)
-                                    .foregroundStyle(Color.primary)
+                                    .foregroundStyle(Color.greekGold)
                                 Text(lang.t("Όροι Χρήσης (EULA)", "Terms of Use (EULA)"))
+                                    .foregroundStyle(Color.greekGold)
                                 Spacer()
                                 Image(systemName: "arrow.up.right")
-                                    .font(.caption).foregroundStyle(.secondary)
+                                    .font(.caption).foregroundStyle(Color.greekGold.opacity(0.6))
                             }
                         }
                         Link(destination: URL(string: "https://sites.google.com/view/greekdrivingtest/home")!) {
                             HStack {
                                 Image(systemName: "hand.raised.fill").frame(width: 28)
-                                    .foregroundStyle(Color.primary)
+                                    .foregroundStyle(Color.greekGold)
                                 Text(lang.t("Πολιτική Απορρήτου", "Privacy Policy"))
+                                    .foregroundStyle(Color.greekGold)
                                 Spacer()
                                 Image(systemName: "arrow.up.right")
-                                    .font(.caption).foregroundStyle(.secondary)
+                                    .font(.caption).foregroundStyle(Color.greekGold.opacity(0.6))
                             }
                         }
                         Link(destination: URL(string: "https://www.apple.com/legal/privacy/data/")!) {
                             HStack {
                                 Image(systemName: "apple.logo").frame(width: 28)
-                                    .foregroundStyle(Color.primary)
+                                    .foregroundStyle(Color.greekGold)
                                 Text(lang.t("Πολιτική Απορρήτου Apple", "Apple Privacy Policy"))
+                                    .foregroundStyle(Color.greekGold)
                                 Spacer()
                                 Image(systemName: "arrow.up.right")
-                                    .font(.caption).foregroundStyle(.secondary)
+                                    .font(.caption).foregroundStyle(Color.greekGold.opacity(0.6))
                             }
                         }
                     } header: {

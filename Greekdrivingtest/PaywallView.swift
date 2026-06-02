@@ -74,7 +74,7 @@ struct PaywallView: View {
                     "All KOK questions, saved progress,\nstatistics and much more."
                 ))
                 .font(.subheadline)
-                .foregroundStyle(.white.opacity(0.68))
+                .foregroundStyle(.white.opacity(0.88))
                 .multilineTextAlignment(.center)
                 .lineSpacing(3)
             }
@@ -87,7 +87,7 @@ struct PaywallView: View {
         VStack(alignment: .leading, spacing: 14) {
             Text(lang.t("Τι περιλαμβάνεται", "What's included"))
                 .font(.caption.bold())
-                .foregroundStyle(.white.opacity(0.55))
+                .foregroundStyle(.white.opacity(0.75))
                 .textCase(.uppercase)
                 .tracking(0.8)
 
@@ -118,7 +118,7 @@ struct PaywallView: View {
                 .frame(width: 22)
             Text(text)
                 .font(.subheadline)
-                .foregroundStyle(.white.opacity(0.88))
+                .foregroundStyle(.white.opacity(0.95))
             Spacer()
         }
     }
@@ -134,7 +134,7 @@ struct PaywallView: View {
                         .foregroundStyle(Color.greekGold)
                     Text(lang.t("ΕΤΗΣΙΑ ΣΥΝΔΡΟΜΗ", "YEARLY SUBSCRIPTION"))
                         .font(.caption.bold())
-                        .foregroundStyle(.white.opacity(0.5))
+                        .foregroundStyle(.white.opacity(0.75))
                         .tracking(1)
                 }
 
@@ -144,7 +144,7 @@ struct PaywallView: View {
 
                 Text(lang.t("Μετά \(store.yearlyDisplayPrice)/έτος", "Then \(store.yearlyDisplayPrice)/year"))
                     .font(.title3.weight(.semibold))
-                    .foregroundStyle(.white.opacity(0.7))
+                    .foregroundStyle(.white.opacity(0.9))
             }
 
             Divider()
@@ -205,11 +205,11 @@ struct PaywallView: View {
         HStack {
             Text(label)
                 .font(.caption2)
-                .foregroundStyle(.white.opacity(0.45))
+                .foregroundStyle(.white.opacity(0.7))
             Spacer()
             Text(value)
                 .font(.caption2.bold())
-                .foregroundStyle(.white.opacity(0.8))
+                .foregroundStyle(.white.opacity(0.95))
         }
     }
 
@@ -227,7 +227,7 @@ struct PaywallView: View {
                         .font(.headline.weight(.semibold))
                     Text(lang.t("Εφάπαξ πληρωμή, χωρίς συνδρομή", "One-time payment, no subscription"))
                         .font(.caption)
-                        .foregroundStyle(.white.opacity(0.5))
+                        .foregroundStyle(.white.opacity(0.7))
                 }
                 Spacer()
                 Text(store.lifetimeDisplayPrice)
@@ -259,7 +259,7 @@ struct PaywallView: View {
             if let err = store.purchaseError {
                 Text(err)
                     .font(.caption)
-                    .foregroundStyle(.white.opacity(0.55))
+                    .foregroundStyle(.white.opacity(0.75))
                     .multilineTextAlignment(.center)
                     .padding(.horizontal, 8)
             }
@@ -269,7 +269,7 @@ struct PaywallView: View {
             } label: {
                 Text(lang.t("Επαναφορά αγορών", "Restore Purchase"))
                     .font(.subheadline)
-                    .foregroundStyle(.white.opacity(0.50))
+                    .foregroundStyle(.white.opacity(0.70))
             }
             .disabled(store.isLoading)
         }
@@ -322,7 +322,7 @@ struct PaywallView: View {
             "Yearly Subscription (\(store.yearlyDisplayPrice)/year) includes a 3-day free trial. After the trial, the subscription auto-renews unless cancelled at least 24 hours before renewal. Payment is charged to your Apple ID. Manage and cancel subscriptions in your App Store account Settings."
         ))
         .font(.caption2)
-        .foregroundStyle(.white.opacity(0.35))
+        .foregroundStyle(.white.opacity(0.55))
         .multilineTextAlignment(.center)
         .lineSpacing(3)
     }
