@@ -8,6 +8,7 @@ struct SettingsView: View {
     @Environment(\.modelContext) private var modelContext
     @Query private var results: [TestResult]
     @State private var showingClearConfirm = false
+    @State private var showManageSubscriptions = false
     @AppStorage("userName") private var userName = ""
     @AppStorage("useDarkMode") private var useDarkMode = true
     @State private var nameInput = ""
@@ -131,7 +132,7 @@ struct SettingsView: View {
                         Text(lang.t("Σύνοψη", "Summary"))
                     }
 
-                    // Pro Access
+                    // Subscription & Access
                     Section {
                         if store.isOncePurchased {
                             HStack {
@@ -152,7 +153,8 @@ struct SettingsView: View {
                                 HStack {
                                     Image(systemName: "clock.fill").foregroundStyle(Color.catOrange).frame(width: 28)
                                     VStack(alignment: .leading, spacing: 2) {
-                                        Text(lang.t("Δωρεάν Δοκιμή", "Free Trial Active"))
+                                        Text(lang.t("Δωρεάν Δοκιμή Ενεργή", "Free Trial Active"))
+                                            .fontWeight(.semibold)
                                         let d = store.trialDaysRemaining
                                         Text(lang.t("\(d) \(d == 1 ? "μέρα" : "μέρες") απομένουν", "\(d) \(d == 1 ? "day" : "days") remaining"))
                                             .font(.caption).foregroundStyle(.secondary)
@@ -165,7 +167,8 @@ struct SettingsView: View {
                                 HStack {
                                     Image(systemName: "checkmark.circle.fill").foregroundStyle(Color.catBlue).frame(width: 28)
                                     VStack(alignment: .leading, spacing: 2) {
-                                        Text(lang.t("Μηνιαία Συνδρομή", "Monthly Subscription Active"))
+                                        Text(lang.t("Μηνιαία Συνδρομή Ενεργή", "Monthly Subscription Active"))
+                                            .fontWeight(.semibold)
                                         Text("\(store.monthlyDisplayPrice)/\(lang.t("μήνα", "month"))")
                                             .font(.caption).foregroundStyle(.secondary)
                                         if let expiry = store.subscriptionExpiryDate {
@@ -174,6 +177,21 @@ struct SettingsView: View {
                                         }
                                     }
                                     Spacer()
+                                }
+                            }
+
+                            // Manage subscription — required by Apple for auto-renewable subscriptions
+                            Button {
+                                showManageSubscriptions = true
+                            } label: {
+                                HStack {
+                                    Image(systemName: "creditcard.fill")
+                                        .foregroundStyle(Color.catBlue).frame(width: 28)
+                                    Text(lang.t("Διαχείριση Συνδρομής", "Manage Subscription"))
+                                        .foregroundStyle(Color.catBlue)
+                                    Spacer()
+                                    Image(systemName: "arrow.up.right")
+                                        .font(.caption).foregroundStyle(Color.catBlue.opacity(0.6))
                                 }
                             }
                         } else {
@@ -237,16 +255,19 @@ struct SettingsView: View {
                             }
                         }
                     } header: {
-                        Text(lang.t("Πρόσβαση", "Access"))
+                        Text(lang.t("Συνδρομή & Πρόσβαση", "Subscription & Access"))
                     } footer: {
                         if store.isOncePurchased {
-                            Text(lang.t("Πλήρης πρόσβαση για πάντα.", "Full access forever."))
+                            Text(lang.t("Πλήρης πρόσβαση για πάντα. Χωρίς ανανέωση.", "Full access forever. No renewal."))
                         } else if store.isMonthlySubscriptionActive {
-                            Text(lang.t("Διαχειριστείτε τη συνδρομή σας από τις Ρυθμίσεις Apple ID.", "Manage your subscription in Apple ID Settings."))
+                            Text(lang.t(
+                                "Η συνδρομή ανανεώνεται αυτόματα. Διαχειριστείτε ή ακυρώστε μέσω του κουμπιού «Διαχείριση Συνδρομής» παραπάνω.",
+                                "Subscription auto-renews. Manage or cancel using the Manage Subscription button above."
+                            ))
                         } else {
                             Text(lang.t(
-                                "3ήμερη δωρεάν δοκιμή, μετά \(store.monthlyDisplayPrice)/μήνα ή \(store.onceDisplayPrice) εφάπαξ.",
-                                "3-day free trial, then \(store.monthlyDisplayPrice)/month or \(store.onceDisplayPrice) once."
+                                "3ήμερη δωρεάν δοκιμή για νέους συνδρομητές, μετά \(store.monthlyDisplayPrice)/μήνα. Ή \(store.onceDisplayPrice) εφάπαξ χωρίς ανανέωση.",
+                                "3-day free trial for new subscribers, then \(store.monthlyDisplayPrice)/month. Or \(store.onceDisplayPrice) once with no renewal."
                             ))
                         }
                     }
@@ -258,12 +279,12 @@ struct SettingsView: View {
                                 .font(.caption.bold()).foregroundStyle(.secondary).textCase(.uppercase).tracking(0.8)
                             VStack(spacing: 6) {
                                 complianceRow(
-                                    lang.t("Μηνιαία Συνδρομή", "Monthly Subscription"),
-                                    lang.t("\(store.monthlyDisplayPrice)/μήνα · Ανανεώνεται αυτόματα", "\(store.monthlyDisplayPrice)/month · Auto-renews")
-                                )
-                                complianceRow(
                                     lang.t("Δωρεάν Δοκιμή 3 Ημερών", "3-Day Free Trial"),
                                     lang.t("Ισχύει για νέους συνδρομητές · Μετά \(store.monthlyDisplayPrice)/μήνα", "For new subscribers · Then \(store.monthlyDisplayPrice)/month")
+                                )
+                                complianceRow(
+                                    lang.t("Μηνιαία Συνδρομή", "Monthly Subscription"),
+                                    lang.t("\(store.monthlyDisplayPrice)/μήνα · Ανανεώνεται αυτόματα · Ακύρωση οποτεδήποτε", "\(store.monthlyDisplayPrice)/month · Auto-renews · Cancel anytime")
                                 )
                                 complianceRow(
                                     lang.t("Εφάπαξ Αγορά", "One-Time Purchase"),
@@ -274,6 +295,18 @@ struct SettingsView: View {
                         .padding(.vertical, 4)
 
                         Divider()
+
+                        Button {
+                            showManageSubscriptions = true
+                        } label: {
+                            HStack {
+                                Image(systemName: "creditcard.fill").frame(width: 28).foregroundStyle(Color.greekGold)
+                                Text(lang.t("Διαχείριση Συνδρομών", "Manage Subscriptions"))
+                                    .foregroundStyle(Color.greekGold)
+                                Spacer()
+                                Image(systemName: "arrow.up.right").font(.caption).foregroundStyle(Color.greekGold.opacity(0.6))
+                            }
+                        }
 
                         Link(destination: URL(string: "https://www.apple.com/legal/internet-services/itunes/dev/stdeula/")!) {
                             HStack {
@@ -338,6 +371,7 @@ struct SettingsView: View {
                 .onAppear { nameInput = userName }
             }
             .navigationTitle(lang.t("Ρυθμίσεις", "Settings"))
+            .manageSubscriptionsSheet(isPresented: $showManageSubscriptions)
             .confirmationDialog(
                 lang.t("Διαγραφή Ιστορικού;", "Clear History?"),
                 isPresented: $showingClearConfirm,

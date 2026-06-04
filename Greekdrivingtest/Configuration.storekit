@@ -28,32 +28,6 @@
       "familyShareable" : false,
       "groupNumber" : 1,
       "internalID" : "7C8D9E0F-1A2B-3C4D-5E6F-7A8B9C0D1E2F",
-      "localizations" : [
-        {
-          "description" : "Full access to all features. Auto-renews monthly. Cancel anytime.",
-          "displayName" : "Monthly Subscription",
-          "locale" : "en_US"
-        },
-        {
-          "description" : "Πλήρης πρόσβαση σε όλες τις λειτουργίες. Ανανεώνεται αυτόματα. Ακύρωση οποτεδήποτε.",
-          "displayName" : "Μηνιαία Συνδρομή",
-          "locale" : "el_GR"
-        }
-      ],
-      "productID" : "com.john.armyapp.Greekdrivingtest.monthly",
-      "referenceName" : "Monthly Subscription",
-      "subscriptionGroupName" : "Access",
-      "subscriptionPeriod" : {
-        "numberOfUnits" : 1,
-        "unit" : "Month"
-      },
-      "type" : "Auto-Renewable Subscription"
-    },
-    {
-      "displayPrice" : "1.99",
-      "familyShareable" : false,
-      "groupNumber" : 1,
-      "internalID" : "5F6E7D8C-9B0A-1C2D-3E4F-5A6B7C8D9E0F",
       "introductoryOffer" : {
         "price" : "0.00",
         "numberOfPeriods" : 1,
@@ -65,22 +39,22 @@
       },
       "localizations" : [
         {
-          "description" : "Full access with a 3-day free trial, then \u20AC1.99 per year. Cancel anytime.",
-          "displayName" : "Yearly Subscription",
+          "description" : "Full access with a 3-day free trial, then €0.99 per month. Cancel anytime.",
+          "displayName" : "Monthly Subscription",
           "locale" : "en_US"
         },
         {
-          "description" : "Πλήρης πρόσβαση με 3ήμερη δωρεάν δοκιμή, στη συνέχεια \u20AC1.99 τον χρόνο. Ακύρωση οποτεδήποτε.",
-          "displayName" : "Ετήσια Συνδρομή",
+          "description" : "Πλήρης πρόσβαση με 3ήμερη δωρεάν δοκιμή, στη συνέχεια €0,99 τον μήνα. Ακύρωση οποτεδήποτε.",
+          "displayName" : "Μηνιαία Συνδρομή",
           "locale" : "el_GR"
         }
       ],
-      "productID" : "com.john.armyapp.Greekdrivingtest.yearly",
-      "referenceName" : "Yearly Subscription",
+      "productID" : "com.john.armyapp.Greekdrivingtest.monthly",
+      "referenceName" : "Monthly Subscription",
       "subscriptionGroupName" : "Access",
       "subscriptionPeriod" : {
         "numberOfUnits" : 1,
-        "unit" : "Year"
+        "unit" : "Month"
       },
       "type" : "Auto-Renewable Subscription"
     }
