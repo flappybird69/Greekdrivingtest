@@ -2,24 +2,23 @@ import StoreKit
 
 @Observable
 final class StoreKitManager {
-    nonisolated static let lifetimeProductID = "com.john.armyapp.Greekdrivingtest.lifetime_unlock"
-    nonisolated static let yearlyProductID = "com.john.armyapp.Greekdrivingtest.yearly"
+    nonisolated static let monthlyProductID = "com.john.armyapp.Greekdrivingtest.monthly"
+    nonisolated static let onceProductID = "com.john.armyapp.Greekdrivingtest.once"
 
-    // MARK: - State
-    private(set) var lifetimeProduct: Product?
-    private(set) var yearlyProduct: Product?
-    private(set) var isLifetimePurchased = false
-    private(set) var isSubscriptionActive = false
+    private(set) var monthlyProduct: Product?
+    private(set) var onceProduct: Product?
+    private(set) var isMonthlySubscriptionActive = false
+    private(set) var isOncePurchased = false
     private(set) var isLoading = false
     private(set) var purchaseError: String?
     private(set) var isTrialActive = false
     private(set) var subscriptionExpiryDate: Date?
     private(set) var productsLoaded = false
 
-    var isUnlocked: Bool { isLifetimePurchased || isSubscriptionActive }
+    var isUnlocked: Bool { isMonthlySubscriptionActive || isOncePurchased }
 
-    var lifetimeDisplayPrice: String { lifetimeProduct?.displayPrice ?? "€9.99" }
-    var yearlyDisplayPrice: String { yearlyProduct?.displayPrice ?? "€1.99" }
+    var monthlyDisplayPrice: String { monthlyProduct?.displayPrice ?? "€0.99" }
+    var onceDisplayPrice: String { onceProduct?.displayPrice ?? "€4.99" }
 
     var trialDaysRemaining: Int {
         guard isTrialActive, let expiry = subscriptionExpiryDate else { return 0 }
@@ -28,8 +27,6 @@ final class StoreKitManager {
 
     @ObservationIgnored
     private var transactionListener: Task<Void, Never>?
-
-    // MARK: - Init
 
     init() {
         transactionListener = Task.detached(priority: .background) { [weak self] in
@@ -52,17 +49,15 @@ final class StoreKitManager {
         transactionListener?.cancel()
     }
 
-    // MARK: - Products
-
     @MainActor
     func loadProducts() async {
         do {
-            let products = try await Product.products(for: [Self.lifetimeProductID, Self.yearlyProductID])
+            let products = try await Product.products(for: [Self.monthlyProductID, Self.onceProductID])
             for product in products {
-                if product.id == Self.lifetimeProductID {
-                    lifetimeProduct = product
-                } else if product.id == Self.yearlyProductID {
-                    yearlyProduct = product
+                if product.id == Self.monthlyProductID {
+                    monthlyProduct = product
+                } else if product.id == Self.onceProductID {
+                    onceProduct = product
                 }
             }
             productsLoaded = true
@@ -73,12 +68,10 @@ final class StoreKitManager {
         }
     }
 
-    // MARK: - Entitlements
-
     @MainActor
     func updatePurchaseStatus() async {
-        isLifetimePurchased = false
-        isSubscriptionActive = false
+        isMonthlySubscriptionActive = false
+        isOncePurchased = false
         isTrialActive = false
         subscriptionExpiryDate = nil
 
@@ -91,17 +84,17 @@ final class StoreKitManager {
 
     @MainActor
     private func handleTransaction(_ transaction: Transaction) {
-        if transaction.productID == Self.lifetimeProductID {
-            isLifetimePurchased = true
+        if transaction.productID == Self.onceProductID {
+            isOncePurchased = true
             return
         }
 
-        guard transaction.productID == Self.yearlyProductID,
+        guard transaction.productID == Self.monthlyProductID,
               let expirationDate = transaction.expirationDate,
               expirationDate > Date()
         else { return }
 
-        isSubscriptionActive = true
+        isMonthlySubscriptionActive = true
         subscriptionExpiryDate = expirationDate
 
         if transaction.offerType == .introductory {
@@ -109,15 +102,13 @@ final class StoreKitManager {
         }
     }
 
-    // MARK: - Purchase
-
     @MainActor
     func purchase(_ productID: String) async {
         let product: Product?
-        if productID == Self.lifetimeProductID {
-            product = lifetimeProduct
+        if productID == Self.monthlyProductID {
+            product = monthlyProduct
         } else {
-            product = yearlyProduct
+            product = onceProduct
         }
 
         guard let product else {
@@ -153,8 +144,6 @@ final class StoreKitManager {
         purchaseError = nil
         await loadProducts()
     }
-
-    // MARK: - Restore
 
     @MainActor
     func restorePurchases() async {

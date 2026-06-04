@@ -2,27 +2,53 @@
   "identifier" : "44A9E2B1-7C3F-4D8E-A1B2-C3D4E5F6A7B8",
   "nonConsumableProducts" : [
     {
-      "displayPrice" : "9.99",
+      "displayPrice" : "4.99",
       "familyShareable" : false,
-      "internalID" : "1A2B3C4D-5E6F-7A8B-9C0D-1E2F3A4B5C6D",
+      "internalID" : "5A6B7C8D-9E0F-1A2B-3C4D-5E6F7A8B9C0D",
       "localizations" : [
         {
           "description" : "Unlock full access to the Greek Driving Test app forever. One-time purchase, no subscription.",
-          "displayName" : "Lifetime Unlock",
+          "displayName" : "One-Time Purchase",
           "locale" : "en_US"
         },
         {
           "description" : "Ξεκλειδώστε πλήρη πρόσβαση στην εφαρμογή για πάντα. Εφάπαξ αγορά, χωρίς συνδρομή.",
-          "displayName" : "Ισόβιο Ξεκλείδωμα",
+          "displayName" : "Εφάπαξ Αγορά",
           "locale" : "el_GR"
         }
       ],
-      "productID" : "com.john.armyapp.Greekdrivingtest.lifetime_unlock",
-      "referenceName" : "Lifetime Unlock",
+      "productID" : "com.john.armyapp.Greekdrivingtest.once",
+      "referenceName" : "One-Time Purchase",
       "type" : "NonConsumable"
     }
   ],
   "subscriptions" : [
+    {
+      "displayPrice" : "0.99",
+      "familyShareable" : false,
+      "groupNumber" : 1,
+      "internalID" : "7C8D9E0F-1A2B-3C4D-5E6F-7A8B9C0D1E2F",
+      "localizations" : [
+        {
+          "description" : "Full access to all features. Auto-renews monthly. Cancel anytime.",
+          "displayName" : "Monthly Subscription",
+          "locale" : "en_US"
+        },
+        {
+          "description" : "Πλήρης πρόσβαση σε όλες τις λειτουργίες. Ανανεώνεται αυτόματα. Ακύρωση οποτεδήποτε.",
+          "displayName" : "Μηνιαία Συνδρομή",
+          "locale" : "el_GR"
+        }
+      ],
+      "productID" : "com.john.armyapp.Greekdrivingtest.monthly",
+      "referenceName" : "Monthly Subscription",
+      "subscriptionGroupName" : "Access",
+      "subscriptionPeriod" : {
+        "numberOfUnits" : 1,
+        "unit" : "Month"
+      },
+      "type" : "Auto-Renewable Subscription"
+    },
     {
       "displayPrice" : "1.99",
       "familyShareable" : false,
@@ -39,12 +65,12 @@
       },
       "localizations" : [
         {
-          "description" : "Full access with a 3-day free trial, then €1.99 per year. Cancel anytime.",
+          "description" : "Full access with a 3-day free trial, then \u20AC1.99 per year. Cancel anytime.",
           "displayName" : "Yearly Subscription",
           "locale" : "en_US"
         },
         {
-          "description" : "Πλήρης πρόσβαση με 3ήμερη δωρεάν δοκιμή, στη συνέχεια €1.99 τον χρόνο. Ακύρωση οποτεδήποτε.",
+          "description" : "Πλήρης πρόσβαση με 3ήμερη δωρεάν δοκιμή, στη συνέχεια \u20AC1.99 τον χρόνο. Ακύρωση οποτεδήποτε.",
           "displayName" : "Ετήσια Συνδρομή",
           "locale" : "el_GR"
         }

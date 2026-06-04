@@ -133,41 +133,40 @@ struct SettingsView: View {
 
                     // Pro Access
                     Section {
-                        if store.isLifetimePurchased {
+                        if store.isOncePurchased {
                             HStack {
                                 Image(systemName: "checkmark.seal.fill")
                                     .foregroundStyle(Color.passGreen).frame(width: 28)
                                 VStack(alignment: .leading, spacing: 2) {
-                                    Text(lang.t("Ισόβια Πρόσβαση", "Lifetime Access Unlocked"))
-                                    Text(lang.t("Εφάπαξ πληρωμή, πλήρης πρόσβαση για πάντα", "One-time payment, full access forever"))
+                                    Text(lang.t("Εφάπαξ Αγορά", "One-Time Purchase"))
+                                        .fontWeight(.semibold)
+                                    Text(lang.t("Πλήρης πρόσβαση για πάντα", "Full access forever"))
                                         .font(.caption).foregroundStyle(.secondary)
                                 }
                                 Spacer()
                                 Image(systemName: "checkmark")
                                     .foregroundStyle(Color.passGreen).font(.subheadline.bold())
                             }
-                        } else if store.isSubscriptionActive {
+                        } else if store.isMonthlySubscriptionActive {
                             if store.isTrialActive {
                                 HStack {
-                                    Image(systemName: "clock.fill")
-                                        .foregroundStyle(Color.catOrange).frame(width: 28)
+                                    Image(systemName: "clock.fill").foregroundStyle(Color.catOrange).frame(width: 28)
                                     VStack(alignment: .leading, spacing: 2) {
                                         Text(lang.t("Δωρεάν Δοκιμή", "Free Trial Active"))
                                         let d = store.trialDaysRemaining
                                         Text(lang.t("\(d) \(d == 1 ? "μέρα" : "μέρες") απομένουν", "\(d) \(d == 1 ? "day" : "days") remaining"))
                                             .font(.caption).foregroundStyle(.secondary)
-                                        Text(lang.t("Μετά \(store.yearlyDisplayPrice)/έτος", "Then \(store.yearlyDisplayPrice)/year"))
+                                        Text(lang.t("Μετά \(store.monthlyDisplayPrice)/μήνα", "Then \(store.monthlyDisplayPrice)/month"))
                                             .font(.caption2).foregroundStyle(.orange)
                                     }
                                     Spacer()
                                 }
                             } else {
                                 HStack {
-                                    Image(systemName: "checkmark.circle.fill")
-                                        .foregroundStyle(Color.greekBlue).frame(width: 28)
+                                    Image(systemName: "checkmark.circle.fill").foregroundStyle(Color.catBlue).frame(width: 28)
                                     VStack(alignment: .leading, spacing: 2) {
-                                        Text(lang.t("Ενεργή Συνδρομή", "Subscription Active"))
-                                        Text("\(store.yearlyDisplayPrice)/\(lang.t("έτος", "year"))")
+                                        Text(lang.t("Μηνιαία Συνδρομή", "Monthly Subscription Active"))
+                                        Text("\(store.monthlyDisplayPrice)/\(lang.t("μήνα", "month"))")
                                             .font(.caption).foregroundStyle(.secondary)
                                         if let expiry = store.subscriptionExpiryDate {
                                             Text(lang.t("Λήξη: ", "Expires: ") + expiry.formatted(date: .abbreviated, time: .omitted))
@@ -178,82 +177,77 @@ struct SettingsView: View {
                                 }
                             }
                         } else {
-                            Button {
-                                Task { await store.purchase(StoreKitManager.yearlyProductID) }
-                            } label: {
+                            // Trial button
+                            Button { Task { await store.purchase(StoreKitManager.monthlyProductID) } } label: {
                                 HStack {
-                                    Image(systemName: "lock.open.fill")
-                                        .foregroundStyle(Color.greekGold).frame(width: 28)
+                                    Image(systemName: "crown.fill").foregroundStyle(Color.greekGold).frame(width: 28)
                                     VStack(alignment: .leading, spacing: 2) {
                                         Text(lang.t("Δωρεάν Δοκιμή 3 Ημερών", "Start 3-Day Free Trial"))
                                             .foregroundStyle(Color.greekGold).fontWeight(.semibold)
-                                        Text(lang.t("Μετά \(store.yearlyDisplayPrice)/έτος · Ετήσια συνδρομή", "Then \(store.yearlyDisplayPrice)/year · Yearly subscription"))
+                                        Text(lang.t("Μετά \(store.monthlyDisplayPrice)/μήνα", "Then \(store.monthlyDisplayPrice)/month"))
                                             .font(.caption).foregroundStyle(.orange)
                                     }
                                     Spacer()
-                                    if store.isLoading {
-                                        ProgressView().scaleEffect(0.8)
-                                    }
+                                    if store.isLoading { ProgressView().scaleEffect(0.8) }
                                 }
-                            }
-                            .disabled(store.isLoading)
+                            }.disabled(store.isLoading)
 
-                            Button {
-                                Task { await store.purchase(StoreKitManager.lifetimeProductID) }
-                            } label: {
+                            // Monthly button
+                            Button { Task { await store.purchase(StoreKitManager.monthlyProductID) } } label: {
                                 HStack {
-                                    Image(systemName: "infinity")
-                                        .foregroundStyle(Color.greekGold).frame(width: 28)
+                                    Image(systemName: "repeat").foregroundStyle(Color.catBlue).frame(width: 28)
                                     VStack(alignment: .leading, spacing: 2) {
-                                        Text(lang.t("Ισόβια — \(store.lifetimeDisplayPrice)", "Lifetime — \(store.lifetimeDisplayPrice)"))
-                                            .foregroundStyle(Color.greekGold).fontWeight(.semibold)
-                                        Text(lang.t("Εφάπαξ πληρωμή, χωρίς συνδρομή", "One-time payment, no subscription"))
+                                        Text(lang.t("Μηνιαία Συνδρομή", "Monthly Subscription"))
+                                            .foregroundStyle(Color.catBlue).fontWeight(.semibold)
+                                        Text(lang.t("\(store.monthlyDisplayPrice)/μήνα · Χωρίς δοκιμή", "\(store.monthlyDisplayPrice)/month · No trial"))
                                             .font(.caption).foregroundStyle(.orange)
                                     }
                                     Spacer()
-                                    if store.isLoading {
-                                        ProgressView().scaleEffect(0.8)
-                                    }
+                                    if store.isLoading { ProgressView().scaleEffect(0.8) }
                                 }
-                            }
-                            .disabled(store.isLoading)
+                            }.disabled(store.isLoading)
 
-                            Button {
-                                Task { await store.restorePurchases() }
-                            } label: {
+                            // Once button
+                            Button { Task { await store.purchase(StoreKitManager.onceProductID) } } label: {
                                 HStack {
-                                    Image(systemName: "arrow.clockwise")
-                                        .foregroundStyle(Color.secondary).frame(width: 28)
-                                    Text(lang.t("Επαναφορά Αγορών", "Restore Purchases"))
-                                        .foregroundStyle(Color.secondary)
+                                    Image(systemName: "infinity").foregroundStyle(.white).frame(width: 28)
+                                    VStack(alignment: .leading, spacing: 2) {
+                                        Text(lang.t("Εφάπαξ — \(store.onceDisplayPrice)", "Once — \(store.onceDisplayPrice)"))
+                                            .foregroundStyle(.white).fontWeight(.semibold)
+                                        Text(lang.t("Πλήρης πρόσβαση για πάντα · Χωρίς συνδρομή", "Full access forever · No subscription"))
+                                            .font(.caption).foregroundStyle(.orange)
+                                    }
+                                    Spacer()
+                                    if store.isLoading { ProgressView().scaleEffect(0.8) }
+                                }
+                            }.disabled(store.isLoading)
+
+                            // Restore
+                            Button { Task { await store.restorePurchases() } } label: {
+                                HStack {
+                                    Image(systemName: "arrow.clockwise").foregroundStyle(Color.secondary).frame(width: 28)
+                                    Text(lang.t("Επαναφορά Αγορών", "Restore Purchases")).foregroundStyle(Color.secondary)
                                     Spacer()
                                 }
-                            }
-                            .disabled(store.isLoading)
+                            }.disabled(store.isLoading)
 
                             if let err = store.purchaseError {
-                                Text(err)
-                                    .font(.caption)
-                                    .foregroundStyle(.secondary)
-                                    .multilineTextAlignment(.center)
-                                    .frame(maxWidth: .infinity)
-                                    .padding(.vertical, 4)
+                                Text(err).font(.caption).foregroundStyle(.secondary)
+                                    .multilineTextAlignment(.center).frame(maxWidth: .infinity).padding(.vertical, 4)
                             }
                         }
                     } header: {
-                        Text(lang.t("Pro Πρόσβαση", "Pro Access"))
+                        Text(lang.t("Πρόσβαση", "Access"))
                     } footer: {
-                        VStack(alignment: .leading, spacing: 6) {
-                            if store.isLifetimePurchased {
-                                Text(lang.t("Πλήρης πρόσβαση για πάντα.", "Full access forever."))
-                            } else if store.isSubscriptionActive {
-                                Text(lang.t("Διαχειριστείτε τη συνδρομή σας από τις Ρυθμίσεις Apple ID.", "Manage your subscription in Apple ID Settings."))
-                            } else {
-                                Text(lang.t(
-                                    "Δοκιμή 3 ημερών, μετά \(store.yearlyDisplayPrice)/έτος ή \(store.lifetimeDisplayPrice) εφάπαξ.",
-                                    "3-day trial, then \(store.yearlyDisplayPrice)/year or \(store.lifetimeDisplayPrice) once."
-                                ))
-                            }
+                        if store.isOncePurchased {
+                            Text(lang.t("Πλήρης πρόσβαση για πάντα.", "Full access forever."))
+                        } else if store.isMonthlySubscriptionActive {
+                            Text(lang.t("Διαχειριστείτε τη συνδρομή σας από τις Ρυθμίσεις Apple ID.", "Manage your subscription in Apple ID Settings."))
+                        } else {
+                            Text(lang.t(
+                                "3ήμερη δωρεάν δοκιμή, μετά \(store.monthlyDisplayPrice)/μήνα ή \(store.onceDisplayPrice) εφάπαξ.",
+                                "3-day free trial, then \(store.monthlyDisplayPrice)/month or \(store.onceDisplayPrice) once."
+                            ))
                         }
                     }
 

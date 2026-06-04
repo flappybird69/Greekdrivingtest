@@ -14,28 +14,24 @@ struct PaywallView: View {
             )
             .ignoresSafeArea()
 
-            Circle().fill(Color.white.opacity(0.06)).frame(width: 300).offset(x: 160, y: -260)
-            Circle().fill(Color.greekGold.opacity(0.18)).frame(width: 200).blur(radius: 60).offset(x: 120, y: -180)
-            Circle().fill(Color.catPurple.opacity(0.12)).frame(width: 260).blur(radius: 80).offset(x: -130, y: 340)
+            decorativeCircles
 
             ScrollView(showsIndicators: false) {
                 VStack(spacing: 0) {
-                    Spacer(minLength: 48)
+                    Spacer(minLength: 40)
                     headerSection
-                    Spacer(minLength: 24)
+                    Spacer(minLength: 20)
                     featuresCard
-                    Spacer(minLength: 24)
-                    agreementNotice
-                    Spacer(minLength: 16)
-                    subscriptionOption
+                    Spacer(minLength: 20)
+                    trialCard
                     Spacer(minLength: 12)
-                    lifetimeOption
+                    monthlyCard
+                    Spacer(minLength: 12)
+                    onceCard
                     Spacer(minLength: 20)
                     legalLinks
-                    Spacer(minLength: 20)
-                    restoreSection
-                    Spacer(minLength: 28)
-                    footnotes
+                    Spacer(minLength: 16)
+                    restoreButton
                     Spacer(minLength: 24)
                 }
                 .padding(.horizontal, 24)
@@ -47,283 +43,166 @@ struct PaywallView: View {
         }
     }
 
-    // MARK: - Header
+    private var decorativeCircles: some View {
+        ZStack {
+            Circle().fill(Color.white.opacity(0.06)).frame(width: 300).offset(x: 160, y: -260)
+            Circle().fill(Color.greekGold.opacity(0.18)).frame(width: 200).blur(radius: 60).offset(x: 120, y: -180)
+            Circle().fill(Color.catPurple.opacity(0.12)).frame(width: 260).blur(radius: 80).offset(x: -130, y: 340)
+        }
+    }
 
     private var headerSection: some View {
-        VStack(spacing: 16) {
+        VStack(spacing: 12) {
             ZStack {
-                Circle()
-                    .fill(Color.white.opacity(0.14))
-                    .frame(width: 100, height: 100)
-                    .blur(radius: 14)
-                    .scaleEffect(1.4)
-                Circle()
-                    .fill(Color.white.opacity(0.10))
-                    .frame(width: 88, height: 88)
-                Text("🇬🇷")
-                    .font(.system(size: 50))
+                Circle().fill(Color.white.opacity(0.14)).frame(width: 100, height: 100).blur(radius: 14).scaleEffect(1.4)
+                Circle().fill(Color.white.opacity(0.10)).frame(width: 88, height: 88)
+                Text("🇬🇷").font(.system(size: 50))
             }
-
-            VStack(spacing: 8) {
+            VStack(spacing: 6) {
                 Text(lang.t("Πλήρης Πρόσβαση", "Full Access"))
-                    .font(.system(size: 34, weight: .bold, design: .rounded))
+                    .font(.system(size: 32, weight: .bold, design: .rounded))
                     .foregroundStyle(.white)
-
                 Text(lang.t(
-                    "Όλες οι ερωτήσεις ΚΟΚ, αποθηκευμένες προόδους,\nστατιστικά και πολλά άλλα.",
-                    "All KOK questions, saved progress,\nstatistics and much more."
+                    "Όλες οι ερωτήσεις ΚΟΚ, flashcards, εξετάσεις & στατιστικά",
+                    "All KOK questions, flashcards, exams & stats"
                 ))
-                .font(.subheadline)
-                .foregroundStyle(.white.opacity(0.88))
-                .multilineTextAlignment(.center)
-                .lineSpacing(3)
+                .font(.subheadline).foregroundStyle(.white.opacity(0.85))
+                .multilineTextAlignment(.center).padding(.horizontal, 20)
             }
         }
     }
 
-    // MARK: - Features
-
     private var featuresCard: some View {
-        VStack(alignment: .leading, spacing: 14) {
+        VStack(alignment: .leading, spacing: 10) {
             Text(lang.t("Τι περιλαμβάνεται", "What's included"))
-                .font(.caption.bold())
-                .foregroundStyle(.white.opacity(0.75))
-                .textCase(.uppercase)
-                .tracking(0.8)
-
-            VStack(spacing: 11) {
-                featureRow("checkmark.circle.fill", .passGreen,
-                           lang.t("Απεριόριστες εξετάσεις 30 ερωτήσεων", "Unlimited 30-question exams"))
-                featureRow("book.fill", .catBlue,
-                           lang.t("Μελέτη flashcards ανά κατηγορία", "Flashcard study by category"))
-                featureRow("exclamationmark.triangle.fill", .catOrange,
-                           lang.t("Πινακίδες & κανόνες κυκλοφορίας", "Traffic signs & road rules"))
-                featureRow("chart.bar.fill", .catPurple,
-                           lang.t("Στατιστικά & παρακολούθηση προόδου", "Statistics & progress tracking"))
-                featureRow("star.fill", .greekGold,
-                           lang.t("Ερώτηση της ημέρας", "Question of the day"))
+                .font(.caption.bold()).foregroundStyle(.white.opacity(0.65)).textCase(.uppercase).tracking(0.8)
+            VStack(spacing: 8) {
+                featureRow("checkmark.circle.fill", .passGreen, lang.t("Απεριόριστες εξετάσεις", "Unlimited exams"))
+                featureRow("book.fill", .catBlue, lang.t("Flashcards ανά κατηγορία", "Flashcards by category"))
+                featureRow("exclamationmark.triangle.fill", .catOrange, lang.t("Πινακίδες & κανόνες", "Traffic signs & rules"))
+                featureRow("chart.bar.fill", .catPurple, lang.t("Στατιστικά & πρόοδος", "Statistics & progress"))
             }
         }
-        .padding(20)
-        .background(.ultraThinMaterial.opacity(0.6))
-        .clipShape(RoundedRectangle(cornerRadius: 20))
-        .overlay(RoundedRectangle(cornerRadius: 20).stroke(Color.white.opacity(0.10), lineWidth: 1))
+        .padding(16).background(.ultraThinMaterial.opacity(0.5)).clipShape(RoundedRectangle(cornerRadius: 18))
+        .overlay(RoundedRectangle(cornerRadius: 18).stroke(Color.white.opacity(0.08), lineWidth: 1))
     }
 
     private func featureRow(_ icon: String, _ color: Color, _ text: String) -> some View {
-        HStack(spacing: 12) {
-            Image(systemName: icon)
-                .font(.system(size: 15, weight: .semibold))
-                .foregroundStyle(color)
-                .frame(width: 22)
-            Text(text)
-                .font(.subheadline)
-                .foregroundStyle(.white.opacity(0.95))
+        HStack(spacing: 10) {
+            Image(systemName: icon).font(.system(size: 13, weight: .semibold)).foregroundStyle(color).frame(width: 20)
+            Text(text).font(.subheadline).foregroundStyle(.white.opacity(0.9))
             Spacer()
         }
     }
 
-    // MARK: - Subscription Option
-
-    private var subscriptionOption: some View {
-        VStack(spacing: 0) {
-            VStack(spacing: 8) {
-                HStack(spacing: 8) {
-                    Image(systemName: "crown.fill")
-                        .font(.caption)
-                        .foregroundStyle(Color.greekGold)
-                    Text(lang.t("ΕΤΗΣΙΑ ΣΥΝΔΡΟΜΗ", "YEARLY SUBSCRIPTION"))
-                        .font(.caption.bold())
-                        .foregroundStyle(.white.opacity(0.75))
-                        .tracking(1)
-                }
-
-                Text(lang.t("3 Ημέρες Δωρεάν", "3 Days Free"))
-                    .font(.system(size: 28, weight: .bold, design: .rounded))
-                    .foregroundStyle(.white)
-
-                Text(lang.t("Μετά \(store.yearlyDisplayPrice)/έτος", "Then \(store.yearlyDisplayPrice)/year"))
-                    .font(.title3.weight(.semibold))
-                    .foregroundStyle(.white.opacity(0.9))
-            }
-
-            Divider()
-                .background(.white.opacity(0.15))
-                .padding(.vertical, 14)
-
-            VStack(spacing: 6) {
-                disclosureRow(lang.t("Διάρκεια δοκιμής", "Trial period"),
-                              lang.t("3 ημέρες δωρεάν", "3 days free"))
-                disclosureRow(lang.t("Τιμή μετά τη δοκιμή", "Price after trial"),
-                              "\(store.yearlyDisplayPrice)/\(lang.t("έτος", "year"))")
-                disclosureRow(lang.t("Ανανέωση", "Renewal"),
-                              lang.t("Αυτόματη, ακύρωση οποτεδήποτε", "Auto-renew, cancel anytime"))
-                disclosureRow(lang.t("Περίοδος χρέωσης", "Billing period"),
-                              lang.t("1 έτος", "1 year"))
-            }
-
-            Button {
-                Task { await store.purchase(StoreKitManager.yearlyProductID) }
-            } label: {
-                ZStack {
-                    if store.isLoading {
-                        ProgressView().tint(Color.greekDark)
-                    } else {
-                        HStack(spacing: 10) {
-                            Image(systemName: "lock.open.fill").font(.headline.bold())
-                            Text(lang.t("Ξεκινήστε Δωρεάν Δοκιμή", "Start Free Trial"))
-                                .font(.headline.bold())
-                        }
-                        .foregroundStyle(Color.greekDark)
-                    }
-                }
-                .frame(maxWidth: .infinity)
-                .frame(height: 54)
-                .background(
-                    LinearGradient(
-                        colors: [Color.greekGold, Color.greekGold.opacity(0.80)],
-                        startPoint: .topLeading,
-                        endPoint: .bottomTrailing
-                    )
-                )
-                .clipShape(Capsule())
-                .shadow(color: Color.greekGold.opacity(0.55), radius: 18, x: 0, y: 8)
-            }
-            .disabled(store.isLoading)
-            .padding(.top, 4)
-        }
-        .padding(20)
-        .background(.ultraThinMaterial.opacity(0.6))
-        .clipShape(RoundedRectangle(cornerRadius: 20))
-        .overlay(
-            RoundedRectangle(cornerRadius: 20)
-                .stroke(Color.greekGold.opacity(0.35), lineWidth: 1)
+    private var trialCard: some View {
+        purchaseCard(
+            icon: "crown.fill",
+            color: Color.greekGold,
+            title: lang.t("Δωρεάν Δοκιμή 3 Ημερών", "3-Day Free Trial"),
+            subtitle: lang.t("Μετά \(store.monthlyDisplayPrice)/μήνα", "Then \(store.monthlyDisplayPrice)/month"),
+            detail: lang.t("Μηνιαία συνδρομή · Ανανεώνεται αυτόματα · Ακύρωση οποτεδήποτε", "Monthly subscription · Auto-renews · Cancel anytime"),
+            buttonColor: LinearGradient(colors: [Color.greekGold, Color.greekGold.opacity(0.8)], startPoint: .leading, endPoint: .trailing),
+            textColor: Color.greekDark,
+            isOutline: false,
+            action: { Task { await store.purchase(StoreKitManager.monthlyProductID) } }
         )
     }
 
-    private func disclosureRow(_ label: String, _ value: String) -> some View {
-        HStack {
-            Text(label)
-                .font(.caption2)
-                .foregroundStyle(.white.opacity(0.7))
-            Spacer()
-            Text(value)
-                .font(.caption2.bold())
-                .foregroundStyle(.white.opacity(0.95))
-        }
+    private var monthlyCard: some View {
+        purchaseCard(
+            icon: "repeat",
+            color: Color.catBlue,
+            title: lang.t("Μηνιαία Συνδρομή", "Monthly Subscription"),
+            subtitle: "\(store.monthlyDisplayPrice)/\(lang.t("μήνα", "month"))",
+            detail: lang.t("Ανανεώνεται αυτόματα · Ακύρωση οποτεδήποτε", "Auto-renews · Cancel anytime"),
+            buttonColor: LinearGradient(colors: [Color.catBlue, Color.catBlue.opacity(0.8)], startPoint: .leading, endPoint: .trailing),
+            textColor: .white,
+            isOutline: false,
+            action: { Task { await store.purchase(StoreKitManager.monthlyProductID) } }
+        )
     }
 
-    // MARK: - Lifetime Option
+    private var onceCard: some View {
+        purchaseCard(
+            icon: "infinity",
+            color: .white,
+            title: lang.t("Εφάπαξ Αγορά", "One-Time Purchase"),
+            subtitle: store.onceDisplayPrice,
+            detail: lang.t("Πλήρης πρόσβαση για πάντα · Χωρίς συνδρομή", "Full access forever · No subscription"),
+            buttonColor: LinearGradient(colors: [Color.white.opacity(0.15), Color.white.opacity(0.08)], startPoint: .leading, endPoint: .trailing),
+            textColor: .white,
+            isOutline: true,
+            action: { Task { await store.purchase(StoreKitManager.onceProductID) } }
+        )
+    }
 
-    private var lifetimeOption: some View {
-        Button {
-            Task { await store.purchase(StoreKitManager.lifetimeProductID) }
-        } label: {
-            HStack {
-                Image(systemName: "infinity")
-                    .font(.system(size: 16, weight: .semibold))
+    private func purchaseCard(icon: String, color: Color, title: String, subtitle: String, detail: String, buttonColor: LinearGradient, textColor: Color, isOutline: Bool, action: @escaping () -> Void) -> some View {
+        VStack(spacing: 10) {
+            HStack(spacing: 14) {
+                Image(systemName: icon).font(.title3.weight(.semibold)).foregroundStyle(color).frame(width: 28)
                 VStack(alignment: .leading, spacing: 2) {
-                    Text(lang.t("Ισόβια Πρόσβαση", "Lifetime Access"))
-                        .font(.headline.weight(.semibold))
-                    Text(lang.t("Εφάπαξ πληρωμή, χωρίς συνδρομή", "One-time payment, no subscription"))
-                        .font(.caption)
-                        .foregroundStyle(.white.opacity(0.7))
+                    Text(title).font(.headline.weight(.semibold)).foregroundStyle(.white)
+                    Text(detail).font(.caption2).foregroundStyle(.white.opacity(0.55))
                 }
                 Spacer()
-                Text(store.lifetimeDisplayPrice)
-                    .font(.title3.weight(.bold))
+                Text(subtitle).font(.title3.weight(.bold)).foregroundStyle(.white)
             }
-            .foregroundStyle(.white)
-            .padding(.horizontal, 20).padding(.vertical, 16)
-            .frame(maxWidth: .infinity)
-            .background(Color.white.opacity(0.10))
-            .clipShape(RoundedRectangle(cornerRadius: 16))
-            .overlay(RoundedRectangle(cornerRadius: 16).stroke(Color.white.opacity(0.15), lineWidth: 1))
-        }
-        .disabled(store.isLoading)
-        .overlay(alignment: .topTrailing) {
-            Text(lang.t("εφάπαξ", "one-time"))
-                .font(.caption2.bold())
-                .foregroundStyle(Color.greekGold)
-                .padding(.horizontal, 10).padding(.vertical, 4)
-                .background(Color.greekGold.opacity(0.15))
+
+            Button(action: action) {
+                ZStack {
+                    if store.isLoading { ProgressView().tint(textColor) }
+                    else { Text(lang.t("Συνέχεια", "Continue")).font(.headline.bold()).foregroundStyle(textColor) }
+                }
+                .frame(maxWidth: .infinity).frame(height: 48)
+                .background(buttonColor)
                 .clipShape(Capsule())
-                .padding(8)
-        }
-    }
-
-    // MARK: - Restore
-
-    private var restoreSection: some View {
-        VStack(spacing: 10) {
-            if let err = store.purchaseError {
-                Text(err)
-                    .font(.caption)
-                    .foregroundStyle(.white.opacity(0.75))
-                    .multilineTextAlignment(.center)
-                    .padding(.horizontal, 8)
-            }
-
-            Button {
-                Task { await store.restorePurchases() }
-            } label: {
-                Text(lang.t("Επαναφορά αγορών", "Restore Purchase"))
-                    .font(.subheadline)
-                    .foregroundStyle(.white.opacity(0.70))
+                .overlay(isOutline ? Capsule().stroke(Color.white.opacity(0.25), lineWidth: 1) : nil)
             }
             .disabled(store.isLoading)
         }
+        .padding(16)
+        .background(.ultraThinMaterial.opacity(0.55))
+        .clipShape(RoundedRectangle(cornerRadius: 18))
+        .overlay(RoundedRectangle(cornerRadius: 18).stroke(isOutline ? Color.white.opacity(0.15) : color.opacity(0.3), lineWidth: 1))
     }
-
-    // MARK: - Agreement Notice (shown above purchase buttons)
-
-    private var agreementNotice: some View {
-        Text(lang.t(
-            "Συνεχίζοντας, συμφωνείτε με τους Όρους Χρήσης (EULA) και την Πολιτική Απορρήτου.",
-            "By continuing, you agree to the Terms of Use (EULA) and Privacy Policy."
-        ))
-        .font(.caption)
-        .foregroundStyle(.white.opacity(0.75))
-        .multilineTextAlignment(.center)
-        .lineSpacing(2)
-        .padding(.horizontal, 8)
-    }
-
-    // MARK: - Legal Links (prominent, between purchase buttons and restore)
 
     private var legalLinks: some View {
-        HStack(spacing: 28) {
-            Link(destination: URL(string: "https://www.apple.com/legal/internet-services/itunes/dev/stdeula/")!) {
-                HStack(spacing: 4) {
-                    Image(systemName: "doc.text.fill")
-                        .font(.caption2)
-                    Text(lang.t("Όροι Χρήσης", "Terms of Use"))
-                        .underline()
+        VStack(spacing: 8) {
+            Text(lang.t(
+                "Η δωρεάν δοκιμή 3 ημερών ισχύει για νέους συνδρομητές. Μετά τη δοκιμή, η μηνιαία συνδρομή ανανεώνεται αυτόματα. Ακύρωση από Ρυθμίσεις Apple ID. Η εφάπαξ αγορά δεν ανανεώνεται.",
+                "3-day free trial for new subscribers. After trial, monthly subscription auto-renews. Cancel in Apple ID Settings. One-time purchase does not renew."
+            ))
+            .font(.caption2).foregroundStyle(.white.opacity(0.40)).multilineTextAlignment(.center).lineSpacing(3)
+
+            HStack(spacing: 24) {
+                Link(destination: URL(string: "https://www.apple.com/legal/internet-services/itunes/dev/stdeula/")!) {
+                    HStack(spacing: 4) {
+                        Image(systemName: "doc.text.fill").font(.caption2)
+                        Text(lang.t("Όροι Χρήσης (EULA)", "Terms of Use (EULA)")).underline()
+                    }
+                }
+                Link(destination: URL(string: "https://sites.google.com/view/greekdrivingtest/home")!) {
+                    HStack(spacing: 4) {
+                        Image(systemName: "hand.raised.fill").font(.caption2)
+                        Text(lang.t("Πολιτική Απορρήτου", "Privacy Policy")).underline()
+                    }
                 }
             }
-            Link(destination: URL(string: "https://sites.google.com/view/greekdrivingtest/home")!) {
-                HStack(spacing: 4) {
-                    Image(systemName: "hand.raised.fill")
-                        .font(.caption2)
-                    Text(lang.t("Πολιτική Απορρήτου", "Privacy Policy"))
-                        .underline()
-                }
-            }
+            .font(.caption.bold()).foregroundStyle(.white.opacity(0.65))
         }
-        .font(.subheadline.weight(.semibold))
-        .foregroundStyle(.white)
     }
 
-    // MARK: - Footnotes
-
-    private var footnotes: some View {
-        Text(lang.t(
-            "Η Ετήσια Συνδρομή (\(store.yearlyDisplayPrice)/έτος) περιλαμβάνει δωρεάν δοκιμή 3 ημερών. Μετά τη δοκιμή η συνδρομή ανανεώνεται αυτόματα εκτός αν ακυρωθεί τουλάχιστον 24 ώρες πριν τη λήξη. Η χρέωση γίνεται μέσω του Apple ID σας. Η διαχείριση και ακύρωση των συνδρομών γίνεται από τις Ρυθμίσεις του λογαριασμού σας στο App Store.",
-            "Yearly Subscription (\(store.yearlyDisplayPrice)/year) includes a 3-day free trial. After the trial, the subscription auto-renews unless cancelled at least 24 hours before renewal. Payment is charged to your Apple ID. Manage and cancel subscriptions in your App Store account Settings."
-        ))
-        .font(.caption2)
-        .foregroundStyle(.white.opacity(0.55))
-        .multilineTextAlignment(.center)
-        .lineSpacing(3)
+    private var restoreButton: some View {
+        VStack(spacing: 8) {
+            if let err = store.purchaseError {
+                Text(err).font(.caption).foregroundStyle(.white.opacity(0.7)).multilineTextAlignment(.center)
+            }
+            Button { Task { await store.restorePurchases() } } label: {
+                Text(lang.t("Επαναφορά Αγορών", "Restore Purchases"))
+                    .font(.subheadline).foregroundStyle(.white.opacity(0.50))
+            }
+            .disabled(store.isLoading)
+        }
     }
 }
