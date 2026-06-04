@@ -253,41 +253,57 @@ struct SettingsView: View {
 
                     // Legal & Compliance
                     Section {
+                        VStack(alignment: .leading, spacing: 10) {
+                            Text(lang.t("Στοιχεία Συνδρομών", "Subscription Terms"))
+                                .font(.caption.bold()).foregroundStyle(.secondary).textCase(.uppercase).tracking(0.8)
+                            VStack(spacing: 6) {
+                                complianceRow(
+                                    lang.t("Μηνιαία Συνδρομή", "Monthly Subscription"),
+                                    lang.t("\(store.monthlyDisplayPrice)/μήνα · Ανανεώνεται αυτόματα", "\(store.monthlyDisplayPrice)/month · Auto-renews")
+                                )
+                                complianceRow(
+                                    lang.t("Δωρεάν Δοκιμή 3 Ημερών", "3-Day Free Trial"),
+                                    lang.t("Ισχύει για νέους συνδρομητές · Μετά \(store.monthlyDisplayPrice)/μήνα", "For new subscribers · Then \(store.monthlyDisplayPrice)/month")
+                                )
+                                complianceRow(
+                                    lang.t("Εφάπαξ Αγορά", "One-Time Purchase"),
+                                    lang.t("\(store.onceDisplayPrice) · Χωρίς ανανέωση · Πλήρης πρόσβαση για πάντα", "\(store.onceDisplayPrice) · No renewal · Full access forever")
+                                )
+                            }
+                        }
+                        .padding(.vertical, 4)
+
+                        Divider()
+
                         Link(destination: URL(string: "https://www.apple.com/legal/internet-services/itunes/dev/stdeula/")!) {
                             HStack {
-                                Image(systemName: "doc.text.fill").frame(width: 28)
-                                    .foregroundStyle(Color.greekGold)
+                                Image(systemName: "doc.text.fill").frame(width: 28).foregroundStyle(Color.greekGold)
                                 Text(lang.t("Όροι Χρήσης (EULA)", "Terms of Use (EULA)"))
                                     .foregroundStyle(Color.greekGold)
                                 Spacer()
-                                Image(systemName: "arrow.up.right")
-                                    .font(.caption).foregroundStyle(Color.greekGold.opacity(0.6))
+                                Image(systemName: "arrow.up.right").font(.caption).foregroundStyle(Color.greekGold.opacity(0.6))
                             }
                         }
                         Link(destination: URL(string: "https://sites.google.com/view/greekdrivingtest/home")!) {
                             HStack {
-                                Image(systemName: "hand.raised.fill").frame(width: 28)
-                                    .foregroundStyle(Color.greekGold)
+                                Image(systemName: "hand.raised.fill").frame(width: 28).foregroundStyle(Color.greekGold)
                                 Text(lang.t("Πολιτική Απορρήτου", "Privacy Policy"))
                                     .foregroundStyle(Color.greekGold)
                                 Spacer()
-                                Image(systemName: "arrow.up.right")
-                                    .font(.caption).foregroundStyle(Color.greekGold.opacity(0.6))
+                                Image(systemName: "arrow.up.right").font(.caption).foregroundStyle(Color.greekGold.opacity(0.6))
                             }
                         }
                         Link(destination: URL(string: "https://www.apple.com/legal/privacy/data/")!) {
                             HStack {
-                                Image(systemName: "apple.logo").frame(width: 28)
-                                    .foregroundStyle(Color.greekGold)
+                                Image(systemName: "apple.logo").frame(width: 28).foregroundStyle(Color.greekGold)
                                 Text(lang.t("Πολιτική Απορρήτου Apple", "Apple Privacy Policy"))
                                     .foregroundStyle(Color.greekGold)
                                 Spacer()
-                                Image(systemName: "arrow.up.right")
-                                    .font(.caption).foregroundStyle(Color.greekGold.opacity(0.6))
+                                Image(systemName: "arrow.up.right").font(.caption).foregroundStyle(Color.greekGold.opacity(0.6))
                             }
                         }
                     } header: {
-                        Text(lang.t("Νομικά", "Legal"))
+                        Text(lang.t("Νομικά & Συμμόρφωση", "Legal & Compliance"))
                     }
 
                     // Clear history
@@ -333,6 +349,16 @@ struct SettingsView: View {
                 Button(lang.t("Άκυρο", "Cancel"), role: .cancel) {}
             } message: {
                 Text(lang.t("Αυτή η ενέργεια δεν μπορεί να αναιρεθεί.", "This action cannot be undone."))
+            }
+        }
+    }
+
+    private func complianceRow(_ title: String, _ detail: String) -> some View {
+        HStack(alignment: .top, spacing: 8) {
+            Image(systemName: "circle.fill").font(.system(size: 5)).foregroundStyle(.primary.opacity(0.4)).padding(.top, 6)
+            VStack(alignment: .leading, spacing: 1) {
+                Text(title).font(.subheadline.weight(.medium)).foregroundStyle(.primary)
+                Text(detail).font(.caption).foregroundStyle(.primary.opacity(0.65))
             }
         }
     }
